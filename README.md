@@ -21,7 +21,7 @@ def slow_computation(x, y, *args, z=1, **kwargs):
 2. Choose the variables to record in the filenames.
 3. Optionally, choose file extension and other specifications.
 4. result will be saved at `data/module/submodules/slow_computation/x-'x'_z-'z'_.lzma` ('x' = value of x passed to slow_computation during call)
-5. If you want to recompute and overwrite, you can pass `overwrite=True` to slow_function. The decorator adds the variables: `save`, `overwrite` and `keys`.
+5. If you want to recompute and overwrite, you can pass `overwrite=True` to slow_function. The decorator adds the arguments: `save`, `overwrite` and `keys`.
 
 ### savefig
 ```
@@ -32,7 +32,7 @@ def plot_results(*args, **kwargs):
 ```
 - Same steps as  `savedata`.
 - Only difference is the output.
-- Decorator adds the same variables as `savedata` plus `return_fig` (`bool`).
+- Decorator adds the same arguments as `savedata` plus `return_fig` (`bool`).
 
 ## Estimate confidence intervals
 The subpackage `utils.stats.rtopy.resample` allows calls to the `resample` [R package](https://cran.r-project.org/web/packages/resample/resample.pdf).
