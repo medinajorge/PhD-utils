@@ -39,7 +39,7 @@ The subpackage `utils.stats.rtopy.resample` allows calls to the `resample` [R pa
 - Provides CI and permutation tests.
 - CIs can account narrowness bias, skewness and other errors in CI estimation, as indicated in the [article](https://arxiv.org/abs/1411.5279)
 
-## Numba accelerated permutation tests
+## Numba-accelerated permutation tests
 Subpackage `utils.stats.tests.permutation`. 
 - Faster permutation tests for the differences in means. Includes paired case.
 - Scheme for adding other statistics in a numba-compatible way (`_permutation_test_2sample_paired` and `_permutation_test_2sample_not_paired` functions)
