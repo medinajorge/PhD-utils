@@ -1,0 +1,158 @@
+"""
+2-sample permutation test, with/without pairing.
+
+Only implemented for the mean. Check functions starting with underscore to implement other statistics.
+Will be refined in the future.
+"""
+import numpy as np
+from numba import njit
+
+
+def _permutation_test_2sample_paired(X1, X2, stat_func, ratio=False, N=int(1e5)-1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+    """
+    Paired permutation test. Numba won't compile. This is a sketch such that the only thing to implement is stat_func.
+    
+    Attrs:
+            alternative:  - greater:    H0: mu_1 - mu_2 < 0,   H1: mu_1 - mu_2  >= 0
+                          - less:       H0: mu_1 - mu_2 > 0,   H1: mu_1 - mu_2  <= 0
+                          - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
+    Returns: p-value
+    """
+    if ratio:
+        def aux(X_paired):
+            return stat_func(X_paired[0]) / stat_func(X_paired[1])
+    else:
+        def aux(X_paired):
+            return stat_func(X_paired[0]) - stat_func(X_paired[1])
+        
+    n = X1.size
+    X_paired = np.vstack((X1, X2))
+    stat_0 = aux(X_paired)
+    
+    perm_sample = np.empty((N))
+    np.random.seed(seed)
+    for i in range(N):
+        shuffle = np.random.randint(0, 2, size=n) == 1
+        X_shifted = X_paired[:, shuffle][::-1]
+        X_still = X_paired[:, ~shuffle]
+        X_perm = np.hstack((X_shifted, X_still))
+        perm_sample[i] = aux(X_perm)
+    
+    if alternative == "greater":
+        return (1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1)
+    elif alternative == "less":
+        return (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+    elif alternative == "two-sided":
+        return 2 * np.fmin((1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1),
+                           (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+                          )
+    else:
+        raise ValueError("alternative not valid")
+
+def _permutation_test_2sample_not_paired(X1, X2, stat_func, ratio=False, N=int(1e5) - 1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+    """
+    Non-paired permutation test. Numba won't compile. This is a sketch such that the only thing to implement is stat_func.
+    
+    Attrs:
+            alternative:  - greater:    H0: mu_1 - mu_2 < 0,   H1: mu_1 - mu_2  >= 0
+                          - less:       H0: mu_1 - mu_2 > 0,   H1: mu_1 - mu_2  <= 0
+                          - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
+    Returns: p-value
+    """
+    n1 = X1.size
+    if ratio:
+        def aux(X):
+            return stat_func(X[:n1]) / stat_func(X[n1:])
+    else:
+        def aux(X):
+            return stat_func(X[:n1]) - stat_func(X[n1:])
+    X = np.hstack((X1, X2))
+    stat_0 = aux(X)
+       
+    perm_sample = np.empty((N)) # permutation distribution
+    np.random.seed(seed)
+    for i in range(N):       
+        np.random.shuffle(X)
+        perm_sample[i] = aux(X)
+    
+    if alternative == "greater":
+        return (1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1)
+    elif alternative == "less":
+        return (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+    elif alternative == "two-sided":
+        return 2 * np.fmin((1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1),
+                           (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+                          )
+    else:
+        raise ValueError("alternative not valid")
+        
+@njit
+def permutation_test_2sample_paired_meandiff(X1, X2, N=int(1e5)-1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+    """
+    Paired permutation test optimized for the differences in means. 3x faster than the default _permutation_test_2sample_paired with stat_func = np.mean.
+    Attrs:
+            alternative:  - greater:    H0: mu_1 - mu_2 < 0,   H1: mu_1 - mu_2  >= 0
+                          - less:       H0: mu_1 - mu_2 > 0,   H1: mu_1 - mu_2  <= 0
+                          - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
+    Returns: p-value
+    """
+    dX = X1 - X2
+    n = dX.size
+    mean_0 = dX.mean()
+    
+    perm_sample = np.empty((N))
+    np.random.seed(seed)
+    for i in range(N):        
+        shuffle = np.random.randint(0, 2, size=n) == 1
+        dX_perm = dX.copy()
+        dX_perm[shuffle] *= -1
+        perm_sample[i] = (dX_perm).mean()
+    
+    if alternative == "greater":
+        return (1 + (perm_sample >= mean_0 - tolerance).sum()) / (N + 1)
+    elif alternative == "less":
+        return (1 + (perm_sample <= mean_0 + tolerance).sum()) / (N + 1)
+    elif alternative == "two-sided":
+        return 2 * np.fmin((1 + (perm_sample >= mean_0 - tolerance).sum()) / (N + 1),
+                           (1 + (perm_sample <= mean_0 + tolerance).sum()) / (N + 1)
+                          )
+    else:
+        raise ValueError("alternative not valid")
+        
+@njit
+def permutation_test_2sample_mean(X1, X2, ratio=False, N=int(1e5) - 1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+    """
+    Permutation test for the differences or ratio of the means (non-paired).
+    
+    Attrs:
+            alternative:  - greater:    H0: mu_1 - mu_2 < 0,   H1: mu_1 - mu_2  >= 0
+                          - less:       H0: mu_1 - mu_2 > 0,   H1: mu_1 - mu_2  <= 0
+                          - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
+    Returns: p-value
+    """
+    n1 = X1.size
+    if ratio:
+        def aux(X, n1): # pass n1 to avoid numba error.
+            return X[:n1].mean() / X[n1:].mean()
+    else:
+        def aux(X, n1):
+            return X[:n1].mean() - X[n1:].mean()
+    X = np.hstack((X1, X2))
+    stat_0 = aux(X, n1)
+       
+    perm_sample = np.empty((N)) # permutation distribution
+    np.random.seed(seed)
+    for i in range(N):       
+        np.random.shuffle(X)
+        perm_sample[i] = aux(X, n1)
+    
+    if alternative == "greater":
+        return (1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1)
+    elif alternative == "less":
+        return (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+    elif alternative == "two-sided":
+        return 2 * np.fmin((1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1),
+                           (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+                          )
+    else:
+        raise ValueError("alternative not valid")
