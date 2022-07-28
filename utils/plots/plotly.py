@@ -1,10 +1,12 @@
 """
 Helper funcs for plotly figures
 """
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from PIL import ImageColor
+from collections import defaultdict
 
 def get_common_range(subplots, axes=["x", "y"], offset_mpl=[0,0], offset_constant=[0,0]):
     data = defaultdict(list)

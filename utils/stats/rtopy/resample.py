@@ -46,7 +46,7 @@ def bootstrap(x, method, y=None, stat="mean", N=int(1e5), seed=0, block_size=100
             ro.globalenv["bs"] = r(f"bootstrap2(DF, {stat}(val), treatment=Group, R=N, seed=seed, block.size=block.size {kwargs_str})")
     return ro.globalenv["bs"]
 
-def CI_bootstrap(x, y=None, stat="mean", method="bootstrapT", expand=True, alpha=0.05, probs=None, alternative="two-sided", return_stats=True, **kwargs):
+def CI_bootstrap(x, y=None, stat="mean", method="bootstrapT", expand=True, alpha=0.05, probs=None, alternative="two-sided", return_stats=False, **kwargs):
     """
     Check for the stats. Unbiased, functional statistics such as the mean should have zero bootstrap bias. If not, increase N.
     NOTE: s2 will have non-zero bootstrap bias because it is not functional.
@@ -74,7 +74,7 @@ def CI_bootstrap(x, y=None, stat="mean", method="bootstrapT", expand=True, alpha
     
     if probs is None:
         if alternative == "less":
-            CI = np.array([-np.inf, CI[0]])
+            CI = np.array([-np.inf, CI[0]]) # Only implemented for one at a time.
         elif alternative == "greater":
             CI = np.array([CI[0], np.inf])
             

@@ -6,6 +6,7 @@ from . import plots
 from . import stats
 from . import storage
 from .decorators import savedata, savefig
+from .stats.rtopy import resample
 
 # Set all paths refered to RootDir
 RootDir = _os.path.dirname(_os.path.dirname(__file__))
@@ -21,5 +22,6 @@ __all__ = ['RootDir',
            'fmt',
            'plots',
            'stats',
+           "resample",
            'storage'
           ]

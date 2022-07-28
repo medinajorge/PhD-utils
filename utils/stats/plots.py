@@ -11,7 +11,7 @@ def qqplot(x, alpha=0.3, ms=20):
         pp = sm.ProbPlot(x, fit=True)
         qq = pp.qqplot(marker='.', markerfacecolor='k', markeredgecolor='k', alpha=alpha, markersize=ms)
         sm.qqline(qq.axes[0], line='45', fmt='k--')
-        return
+        return plt.gcf()
     
 def density_kernel(*X, cov_factor=0.1, n_points=300, **kwargs):
     fig = get_figure(yaxis_title="Probability density", **kwargs)
