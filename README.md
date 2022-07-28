@@ -41,7 +41,7 @@ The subpackage `utils.stats.rtopy.resample` allows calls to the `resample` [R pa
 
 ## Numba-accelerated permutation tests
 Subpackage `utils.stats.tests.permutation`. 
-- Faster permutation tests for the differences in means. Includes paired case.
+- Faster permutation tests for the means and medians. Includes paired case.
 - Scheme for adding other statistics in a numba-compatible way (`_permutation_test_2sample_paired` and `_permutation_test_2sample_not_paired` functions)
 
 ## Example
