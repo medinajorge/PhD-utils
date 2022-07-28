@@ -13,14 +13,14 @@ def _permutation_test_2sample_paired(X1, X2, stat_func, ratio=False, N=int(1e6)-
     Paired permutation test. Numba won't compile. This is a sketch such that the only thing to implement is stat_func.
     
     Attrs:
-            alternative (example: mean): 
-                                           - greater:    H0: mu_1 / mu_2 < 1,   H1: mu_1 / mu_2  >= 1
-                         ratio             - less:       H0: mu_1 / mu_2 > 1,   H1: mu_1 / mu_2  <= 1
-                                           - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
-            
-                                           - greater:    H0: mu_1 - mu_2 < 0,   H1: mu_1 - mu_2  >= 0
-                         not ratio         - less:       H0: mu_1 - mu_2 > 0,   H1: mu_1 - mu_2  <= 0
-                                           - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
+            alternative: 
+                                           - greater:    H0: mu_1 / mu_2 < observed,       H1: mu_1 / mu_2  >= observed  
+                         ratio             - less:       H0: mu_1 / mu_2 > observed,       H1: mu_1 / mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 / mu_2 = observed,       H1: mu_1 / mu_2  != observed 
+           
+                                           - greater:    H0: mu_1 - mu_2 < observed,       H1: mu_1 - mu_2  >= observed  
+                         not ratio         - less:       H0: mu_1 - mu_2 > observed,       H1: mu_1 - mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 - mu_2 = observed,       H1: mu_1 - mu_2  != observed 
     Returns: p-value
     """
     if ratio:
@@ -59,14 +59,14 @@ def _permutation_test_2sample_not_paired(X1, X2, stat_func, ratio=False, N=int(1
     Non-paired permutation test. Numba won't compile. This is a sketch such that the only thing to implement is stat_func.
     
     Attrs:
-            alternative (example: mean): 
-                                           - greater:    H0: mu_1 / mu_2 < 1,   H1: mu_1 / mu_2  >= 1
-                         ratio             - less:       H0: mu_1 / mu_2 > 1,   H1: mu_1 / mu_2  <= 1
-                                           - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
-            
-                                           - greater:    H0: mu_1 - mu_2 < 0,   H1: mu_1 - mu_2  >= 0
-                         not ratio         - less:       H0: mu_1 - mu_2 > 0,   H1: mu_1 - mu_2  <= 0
-                                           - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
+            alternative: 
+                                           - greater:    H0: mu_1 / mu_2 < observed,       H1: mu_1 / mu_2  >= observed  
+                         ratio             - less:       H0: mu_1 / mu_2 > observed,       H1: mu_1 / mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 / mu_2 = observed,       H1: mu_1 / mu_2  != observed 
+           
+                                           - greater:    H0: mu_1 - mu_2 < observed,       H1: mu_1 - mu_2  >= observed  
+                         not ratio         - less:       H0: mu_1 - mu_2 > observed,       H1: mu_1 - mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 - mu_2 = observed,       H1: mu_1 - mu_2  != observed 
     Returns: p-value
     """
     n1 = X1.size
@@ -103,13 +103,13 @@ def permutation_test_2sample_paired_median(X1, X2, ratio=False, N=int(1e6)-1, al
     
     Attrs:
             alternative: 
-                                           - greater:    H0: me_1 / me_2 < 1,   H1: me_1 / me_2  >= 1
-                         ratio             - less:       H0: me_1 / me_2 > 1,   H1: me_1 / me_2  <= 1
-                                           - two-sided:  H0: me_1 = me_2,       H1: me_1 != me_2.
-            
-                                           - greater:    H0: me_1 - me_2 < 0,   H1: me_1 - me_2  >= 0
-                         not ratio         - less:       H0: me_1 - me_2 > 0,   H1: me_1 - me_2  <= 0
-                                           - two-sided:  H0: me_1 = me_2,       H1: me_1 != me_2.
+                                           - greater:    H0: me_1 / me_2 < observed,       H1: me_1 / me_2  >= observed  
+                         ratio             - less:       H0: me_1 / me_2 > observed,       H1: me_1 / me_2  <= observed  
+                                           - two-sided:  H0: me_1 / me_2 = observed,       H1: me_1 / me_2  != observed 
+           
+                                           - greater:    H0: me_1 - me_2 < observed,       H1: me_1 - me_2  >= observed  
+                         not ratio         - less:       H0: me_1 - me_2 > observed,       H1: me_1 - me_2  <= observed  
+                                           - two-sided:  H0: me_1 - me_2 = observed,       H1: me_1 - me_2  != observed 
             
     Returns: p-value
     """
@@ -149,15 +149,15 @@ def permutation_test_2sample_not_paired_median(X1, X2, ratio=False, N=int(1e6) -
     """
     Non-paired permutation test for the median.
     
-    Attrs:
+   Attrs:
             alternative: 
-                                           - greater:    H0: me_1 / me_2 < 1,   H1: me_1 / me_2  >= 1
-                         ratio             - less:       H0: me_1 / me_2 > 1,   H1: me_1 / me_2  <= 1
-                                           - two-sided:  H0: me_1 = me_2,       H1: me_1 != me_2.
-            
-                                           - greater:    H0: me_1 - me_2 < 0,   H1: me_1 - me_2  >= 0
-                         not ratio         - less:       H0: me_1 - me_2 > 0,   H1: me_1 - me_2  <= 0
-                                           - two-sided:  H0: me_1 = me_2,       H1: me_1 != me_2.
+                                           - greater:    H0: me_1 / me_2 < observed,       H1: me_1 / me_2  >= observed  
+                         ratio             - less:       H0: me_1 / me_2 > observed,       H1: me_1 / me_2  <= observed  
+                                           - two-sided:  H0: me_1 / me_2 = observed,       H1: me_1 / me_2  != observed 
+           
+                                           - greater:    H0: me_1 - me_2 < observed,       H1: me_1 - me_2  >= observed  
+                         not ratio         - less:       H0: me_1 - me_2 > observed,       H1: me_1 - me_2  <= observed  
+                                           - two-sided:  H0: me_1 - me_2 = observed,       H1: me_1 - me_2  != observed 
     Returns: p-value
     """
     n1 = X1.size
@@ -195,13 +195,13 @@ def permutation_test_2sample_paired_mean(X1, X2, ratio=False, N=int(1e6)-1, alte
     
     Attrs:
             alternative: 
-                                           - greater:    H0: mu_1 / mu_2 < 1,   H1: mu_1 / mu_2  >= 1
-                         ratio             - less:       H0: mu_1 / mu_2 > 1,   H1: mu_1 / mu_2  <= 1
-                                           - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
-            
-                                           - greater:    H0: mu_1 - mu_2 < 0,   H1: mu_1 - mu_2  >= 0
-                         not ratio         - less:       H0: mu_1 - mu_2 > 0,   H1: mu_1 - mu_2  <= 0
-                                           - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
+                                           - greater:    H0: mu_1 / mu_2 < observed,       H1: mu_1 / mu_2  >= observed  
+                         ratio             - less:       H0: mu_1 / mu_2 > observed,       H1: mu_1 / mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 / mu_2 = observed,       H1: mu_1 / mu_2  != observed 
+           
+                                           - greater:    H0: mu_1 - mu_2 < observed,       H1: mu_1 - mu_2  >= observed  
+                         not ratio         - less:       H0: mu_1 - mu_2 > observed,       H1: mu_1 - mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 - mu_2 = observed,       H1: mu_1 - mu_2  != observed 
     Returns: p-value
     """
     if ratio:
@@ -234,15 +234,54 @@ def permutation_test_2sample_paired_mean(X1, X2, ratio=False, N=int(1e6)-1, alte
                           )
     else:
         raise ValueError("alternative not valid")
+        
+@njit
+def permutation_test_2sample_mean(X1, X2, ratio=False, N=int(1e6) - 1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+    """
+    Permutation test for the differences or ratio of the means (non-paired).
+    
+    Attrs:
+            alternative:  - greater:    H0: mu_1 - mu_2 < observed,       H1: mu_1 - mu_2  >= observed
+                          - less:       H0: mu_1 - mu_2 > observed,       H1: mu_1 - mu_2  <= observed
+                          - two-sided:  H0: mu_1 - mu_2 = observed,       H1: mu_1 - mu_2  != observed
+    Returns: p-value
+    """
+    n1 = X1.size
+    if ratio:
+        def aux(X, n1): # pass n1 to avoid numba error.
+            return X[:n1].mean() / X[n1:].mean()
+    else:
+        def aux(X, n1):
+            return X[:n1].mean() - X[n1:].mean()
+    X = np.hstack((X1, X2))
+    stat_0 = aux(X, n1)
+       
+    perm_sample = np.empty((N)) # permutation distribution
+    np.random.seed(seed)
+    for i in range(N):       
+        np.random.shuffle(X)
+        perm_sample[i] = aux(X, n1)
+    
+    if alternative == "greater":
+        return (1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1)
+    elif alternative == "less":
+        return (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+    elif alternative == "two-sided":
+        return 2 * np.fmin((1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1),
+                           (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+                          )
+    else:
+        raise ValueError("alternative not valid")
 
 @njit
-def permutation_test_2sample_paired_meandiff(X1, X2, N=int(1e6)-1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+def permutation_test_2sample_paired_diffmean(X1, X2, N=int(1e6)-1, alternative="two-sided", tolerance=1.5e-8, seed=0):
     """
-    Paired permutation test optimized for the differences in means. about 2x faster than the default _permutation_test_2sample_paired with stat_func = np.mean.
+    Paired permutation test optimized for the mean of the differences. about 2x faster than the default _permutation_test_2sample_paired with stat_func = np.mean.
+    Coincides with the test for the differences in means. (Not as the median)
     Attrs:
-            alternative:  - greater:    H0: mu_1 - mu_2 < 0,   H1: mu_1 - mu_2  >= 0
-                          - less:       H0: mu_1 - mu_2 > 0,   H1: mu_1 - mu_2  <= 0
-                          - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
+            alternative:  - greater:    H0: mu(X1-X2) < <X1-X2>_sample,       H1: mu(X1-X2) >= <X1-X2>_sample
+                          - less:       H0: mu(X1-X2) > <X1-X2>_sample,       H1: mu(X1-X2) <= <X1-X2>_sample
+                          - two-sided:  H0: mu(X1-X2) = <X1-X2>_sample,       H1: mu(X1-X2) != <X1-X2>_sample
     Returns: p-value
     """
     dX = X1 - X2
@@ -269,31 +308,28 @@ def permutation_test_2sample_paired_meandiff(X1, X2, N=int(1e6)-1, alternative="
         raise ValueError("alternative not valid")
         
 @njit
-def permutation_test_2sample_mean(X1, X2, ratio=False, N=int(1e6) - 1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+def permutation_test_2sample_paired_diffmedian(X1, X2, N=int(1e6)-1, alternative="two-sided", tolerance=1.5e-8, seed=0):
     """
-    Permutation test for the differences or ratio of the means (non-paired).
+    Paired permutation test optimized for the median of the differences. about 2x faster than the default _permutation_test_2sample_paired with stat_func = np.mean.
+    NOTE: Does not coincide with the test for the differences in medians.
     
     Attrs:
-            alternative:  - greater:    H0: mu_1 - mu_2 < 0,   H1: mu_1 - mu_2  >= 0
-                          - less:       H0: mu_1 - mu_2 > 0,   H1: mu_1 - mu_2  <= 0
-                          - two-sided:  H0: mu_1 = mu_2,       H1: mu_1 != mu_2.
+            alternative:  - greater:    H0: me(X1-X2) < observed,       H1: me(X1-X2) >= observed
+                          - less:       H0: me(X1-X2) > observed,       H1: me(X1-X2) <= observed
+                          - two-sided:  H0: me(X1-X2) = observed,       H1: me(X1-X2) != observed.
     Returns: p-value
     """
-    n1 = X1.size
-    if ratio:
-        def aux(X, n1): # pass n1 to avoid numba error.
-            return X[:n1].mean() / X[n1:].mean()
-    else:
-        def aux(X, n1):
-            return X[:n1].mean() - X[n1:].mean()
-    X = np.hstack((X1, X2))
-    stat_0 = aux(X, n1)
-       
-    perm_sample = np.empty((N)) # permutation distribution
+    dX = X1 - X2
+    n = dX.size
+    stat_0 = np.median(dX)
+    
+    perm_sample = np.empty((N))
     np.random.seed(seed)
-    for i in range(N):       
-        np.random.shuffle(X)
-        perm_sample[i] = aux(X, n1)
+    for i in range(N):        
+        shuffle = np.random.randint(0, 2, size=n) == 1
+        dX_perm = dX.copy()
+        dX_perm[shuffle] *= -1
+        perm_sample[i] = np.median(dX_perm)
     
     if alternative == "greater":
         return (1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1)
