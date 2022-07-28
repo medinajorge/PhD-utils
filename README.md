@@ -10,7 +10,7 @@ Don't spend time creating directories, deciding filenames, etc. Decorators `save
 - `savefig`  saves output figure.
 
 ### savedata
-Example function `slow_computation` in module `analysis.module.submodules`
+Example function `slow_computation` in module `package.subpackages.module`
 ```
 @savedata("x+z")
 def slow_computation(x, y, *args, z=1, **kwargs):
@@ -20,7 +20,7 @@ def slow_computation(x, y, *args, z=1, **kwargs):
 1. Apply to function (result of any type).
 2. Choose the variables to record in the filenames.
 3. Optionally, choose file extension and other specifications.
-4. Result will be saved at `data/module/submodules/slow_computation/x-'x'_z-'z'_.lzma` ('x' = value of x passed to `slow_computation` during call)
+4. Result will be saved at `data/subpackages/module/slow_computation/x-'x'_z-'z'_.lzma` ('x' = value of x passed to `slow_computation` during call)
 5. If you want to recompute and overwrite, you can pass `overwrite=True` to `slow_computation`. The decorator adds the arguments: `save`, `overwrite` and `keys`.
 
 ### savefig
