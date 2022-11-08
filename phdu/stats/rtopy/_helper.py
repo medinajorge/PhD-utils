@@ -11,11 +11,11 @@ except:
 
 def load_R_pkg(pkg):
     """Loads R package, installing it if needed."""
-    if not ro.packages.is_installed(pkg):
+    if not ro.packages.isinstalled(pkg):
         warnings.warn(f"Package '{pkg}' not found. Proceeding to install it ...", RuntimeWarning)
         utils = importr("utils")
         utils.install_packages(pkg)
-    r(r"library({pkg})")
+    r(f"library({pkg})")
     return
 
 def attr_preprocess(func, attrs, clear_env=False):
