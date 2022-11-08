@@ -1,4 +1,4 @@
 from . import base
-from . import plotly
+from . import plotly_utils
 
 from .base import *
