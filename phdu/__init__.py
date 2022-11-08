@@ -1,7 +1,6 @@
 from tidypath import savedata, savefig, add_arg, modify_arg, delete_arg
 from . import fmt
 from . import storage
-from . import _helper
 from . import plots
 from . import stats
 from .stats.rtopy import resample
