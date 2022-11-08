@@ -4,12 +4,15 @@ Based on the article: https://arxiv.org/abs/1411.5279
 """
 import numpy as np
 import pandas as pd
-import rpy2.robjects as ro
-from rpy2.robjects import r, pandas2ri, numpy2ri
-from rpy2.robjects.packages import importr
-pandas2ri.activate()
-ro.numpy2ri.activate()
-from ._helper import attr_preprocess, load_R_pkg
+try:
+    import rpy2.robjects as ro
+    from rpy2.robjects import r, pandas2ri, numpy2ri
+    from rpy2.robjects.packages import importr
+    pandas2ri.activate()
+    ro.numpy2ri.activate()
+    from ._helper import attr_preprocess, load_R_pkg
+except:
+    pass
 
     
 def stat_computer(obj_name, nsamples=1):

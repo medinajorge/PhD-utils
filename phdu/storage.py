@@ -1,7 +1,6 @@
 """
 Move/delete data
 """
-
 import os
 from pathlib import Path
 import re

@@ -1,6 +1,6 @@
 try:
     import statsmodels.stats.api as sms
-except
+except:
     pass
 
 def t_interval(x, alpha=0.05, alternative="two-sided"):

@@ -1,5 +1,5 @@
 """
-Not available
+To be implemented
 """
 import numpy as np
 from scipy.stats import gaussian_kde

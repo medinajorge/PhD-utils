@@ -4,3 +4,4 @@ from . import plots
 from . import stats
 from . import storage
 from .stats.rtopy import resample
+from .stats.test import permutation

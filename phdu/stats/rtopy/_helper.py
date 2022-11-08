@@ -1,10 +1,13 @@
 import inspect
 import warnings
-import rpy2.robjects as ro
-from rpy2.robjects import r, pandas2ri, numpy2ri
-from rpy2.robjects.packages import importr
-pandas2ri.activate()
-ro.numpy2ri.activate()
+try:
+    import rpy2.robjects as ro
+    from rpy2.robjects import r, pandas2ri, numpy2ri
+    from rpy2.robjects.packages import importr
+    pandas2ri.activate()
+    ro.numpy2ri.activate()
+except:
+    pass
 
 def load_R_pkg(pkg):
     """Loads R package, installing it if needed."""
