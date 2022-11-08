@@ -25,8 +25,8 @@ Please check the [example notebook](https://github.com/medinajorge/PhD-utils/blo
 
   ```conda install -c conda-forge r r-essentials r-base```
   
-- Install with optional dependencies:
+- Install with dependencies:
 
   ```pip install phdu[dependencies]```
   
-  Where `dependencies` can be `r` (needed for `resample` to work), `statsmodels`, `matplotlib`, `plotly` or `all` (recommended).
+  Where `dependencies` can be `all` (recommended), `r` (needed for `resample` to work), `statsmodels`, `matplotlib` or `plotly`.
