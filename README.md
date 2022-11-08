@@ -15,7 +15,7 @@ The module `utils.resample` allows calls to the `resample` [R package](https://c
 Subpackage `utils.stats.tests.permutation`. 
 - Faster permutation tests for the means and medians. 
 - Includes paired and block-paired cases.
-- Scheme for adding other statistics in a numba-compatible way (`_permutation_test_2sample_paired`, `_permutation_test_2sample_paired_block` and  `_permutation_test_2sample_not_paired` functions).
+- Schemes for adding other statistics in a numba-compatible way: `_permutation_test_2sample_paired`, `_permutation_test_2sample_paired_block` and  `_permutation_test_2sample_not_paired` functions.
 
 ## Demo
 Please check the [example notebook](https://github.com/medinajorge/PhD-utils/blob/master/tests/Example.ipynb).
