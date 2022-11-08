@@ -1,11 +1,11 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='phdu',
-    version='1.0.6',
+    version='1.0.8',
     author="Jorge Medina Hernández",
     author_email='medinahdezjorge@gmail.com',
-    packages=['phdu'],
+    packages=find_packages("."),
     url='https://github.com/medinajorge/PhD-utils',
     download_url='https://github.com/medinajorge/PhD-utils/archive/refs/tags/v1.0.0-beta.tar.gz',
     description="Automatically store/load data in a tidy, efficient way.",
