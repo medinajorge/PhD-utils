@@ -23,6 +23,6 @@ Please check the [example notebook](https://github.com/medinajorge/PhD-utils/blo
 ## Install
 - For the R compatible installation first install R:
 
-    conda install -c conda-forge r r-essentials r-base
+  ```conda install -c conda-forge r r-essentials r-base```
   
 - Optional dependencies: `r` (needed for resample to work), `statsmodels`, `matplotlib`, `plotly`.
