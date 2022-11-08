@@ -3,6 +3,8 @@ Helper funcs for plotting
 """
 import numpy as np
 from colour import Color
+from PIL import ImageColor
+from .. import _helper
         
 def rows_cols(nrows, ncols):
     rows, cols = (np.vstack(np.divmod(range(nrows*ncols), ncols)) + 1)
@@ -13,11 +15,11 @@ def break_str(x, separator="<br>"):
     mid = len(x_list) // 2
     return "{} {} {}".format(" ".join(x_list[:mid]), separator, " ".join(x_list[mid:]))
 
-def plotly_default_colors(mpl=10):
-    cs = ['#1f77b4', '#ff7f0e',  '#2ca02c',  '#d62728',  '#9467bd',  '#8c564b',  '#e377c2',  '#7f7f7f',  '#bcbd22',  '#17becf'] * mpl
-    return cs
+def plotly_default_colors(maxlen=None):
+    colors = ['#1f77b4', '#ff7f0e',  '#2ca02c',  '#d62728',  '#9467bd',  '#8c564b',  '#e377c2',  '#7f7f7f',  '#bcbd22',  '#17becf']
+    return _helper.sequence_or_stream(cs, maxlen=maxlen)
 
-def plotly_colors():
+def plotly_colors(maxlen=None):
     cs = """aliceblue, antiquewhite, aqua, aquamarine, azure,
                 beige, bisque, black, blanchedalmond, blue,
                 blueviolet, brown, burlywood, cadetblue,
@@ -56,7 +58,7 @@ def plotly_colors():
     li = cs.split(',')
     li = [l.replace('\n','') for l in li]
     li = [l.replace(' ','') for l in li]
-    return li
+    return _helper.sequence_or_stream(li, maxlen=maxlen)
 
 def color_gradient(start, end, n, to_hex=True):
     colors = [*Color(start).range_to(Color(end), n)]
@@ -64,3 +66,7 @@ def color_gradient(start, end, n, to_hex=True):
         return [c.hex for c in colors]
     else:
         return colors
+
+def color_std(color, opacity=0.3):
+    """Colors for the band y_mean +- y_std"""
+    return "rgba" + str((*ImageColor.getrgb(color), opacity))

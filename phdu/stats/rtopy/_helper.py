@@ -1,12 +1,19 @@
 import inspect
+import warnings
 import rpy2.robjects as ro
 from rpy2.robjects import r, pandas2ri, numpy2ri
 from rpy2.robjects.packages import importr
 pandas2ri.activate()
 ro.numpy2ri.activate()
 
-#base = importr("base") #base module for R -> python env
-#utils = importr("utils") #utils package for R. -> python env
+def load_R_pkg(pkg):
+    """Loads R package, installing it if needed."""
+    if not ro.packages.is_installed(pkg):
+        warnings.warn(f"Package '{pkg}' not found. Proceeding to install it ...", RuntimeWarning)
+        utils = importr("utils")
+        utils.install_packages(pkg)
+    r(r"library({pkg})")
+    return
 
 def attr_preprocess(func, attrs, clear_env=False):
     """

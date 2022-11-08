@@ -2,11 +2,17 @@
 Helper funcs for plotly figures
 """
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from PIL import ImageColor
+import pandas as pd
+import warnings
+try:
+    import plotly.express as px
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+except:
+    warnings.warn("'plotly' not available.", RuntimeWarning)
 from collections import defaultdict
+from functools import partial
+from .. import _helper
 
 def get_common_range(subplots, axes=["x", "y"], offset_mpl=[0,0], offset_constant=[0,0]):
     data = defaultdict(list)
@@ -27,43 +33,54 @@ def get_common_range(subplots, axes=["x", "y"], offset_mpl=[0,0], offset_constan
     ranges = {ax: [data[f"{ax}-min"], data[f"{ax}-max"]] for ax in axes}
     return ranges
 
-get_tickdata = lambda subplots, axes=["x","y"], size=24: {"{}axis{}_tickfont_size".format(ax, i): size for ax in axes for i in [""] + [*range(1, subplots + 1)]}
-get_logaxes = lambda subplots, axes=["y"]: {"{}axis{}_type".format(ax, i): "log" for ax in axes for i in [""] + [*range(1, subplots + 1)]}
-get_exponent_format = lambda subplots, axes=["y"]: {"{}axis{}_exponentformat".format(ax, i): "power" for ax in axes for i in [""] + [*range(1, subplots + 1)]}
-get_logaxes_expformat = lambda subplots, axes=["y"]: {**get_logaxes(subplots, axes), **get_exponent_format(subplots,axes)}
-get_range_data = lambda subplots, axes, ranges: {"{}axis{}_range".format(ax, i): r for (ax, r) in zip(axes, ranges) for i in [""] + [*range(1, subplots + 1)]}
-format_data = lambda subplots, key, val, axes=["x","y"]: {"{}axis{}_{}".format(ax, i, key): val for ax in axes for i in [""] + [*range(1, subplots + 1)]}
+def get_nplots(fig):
+    return sum(1 for x in fig.layout if "xaxis" in x)
 
-non_visible_axes_specs = dict(visible=False, showgrid=False, zeroline=False) 
-get_delete_axes = lambda subplots, axes=["x", "y"]: {f"{ax}axis{i}": non_visible_axes_specs for ax in axes for i in [""] + [*range(1, subplots + 1)]}
+def mod_delete_axes(subplots, axes=["x", "y"]):
+    non_visible_axes_specs = dict(visible=False, showgrid=False, zeroline=False) 
+    return {f"{ax}axis{i}": non_visible_axes_specs for ax in axes for i in [""] + [*range(1, subplots + 1)]}
 
-def get_subplots(cols, rows=1, horizontal_spacing=0.03, height=None, width=2500, ticksize=32, font_size=40, font_family="sans-serif", hovermode=False,
-                 delete_axes=False,
-                 **kwargs):
-    height = 800*rows if height is None else height
-    fig = make_subplots(figure=go.Figure(layout=dict(margin=dict(l=100, r=20, b=80, t=80, pad=1), height=height, width=width)),
-                        horizontal_spacing=horizontal_spacing, rows=rows, cols=cols, **kwargs
-                       )
-                    
-    fig.for_each_annotation(lambda a: a.update(font={'size':font_size, "family":font_family}))
-    ticks_data = {'{}axis{}_tickfont_size'.format(ax, i): ticksize for ax in ["x", "y"] for i in [""] + [*range(1, (rows*cols) + 1)]}
-    fig.update_layout(**ticks_data, legend_font_size=font_size, hovermode=hovermode)
-    if delete_axes:
-        fig.update_layout(**get_delete_axes(cols*rows), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    return fig
+def mod_layout(subplots, key, val, axes=["x","y"]):
+    if len(val) == len(axes):
+        return {"{}axis{}_{}".format(ax, i, key): v for (ax, v) in zip(axes, val) for i in [""] + [*range(1, subplots + 1)]}
+    else:
+        return {"{}axis{}_{}".format(ax, i, key): val for ax in axes for i in [""] + [*range(1, subplots + 1)]}
 
-def get_figure(height=800, width=1200, ticksize=32, font_size=40, margin=None, font_family="sans-serif", hovermode=False, delete_axes=False, **kwargs):
+mod_dashes           = partial(_helper.sequence_or_stream, ["solid", "dash", "dot"])
+mod_ticksize         = partial(mod_layout, key="tickfont_size", val=24)
+mod_logaxes          = partial(mod_layout, key="type", val="log") 
+mod_expfmt           = partial(mod_layout, key="exponentformat", val="power")
+mod_range            = partial(mod_layout, key="range")
+mod_logaxes_expfmt   = lambda subplots, axes=["x", "y"]: {**mod_logaxes(subplots, axes=axes), **mod_expfmt(subplots, axes=axes)}
+
+def mod_common_range(subplots, axes=["x", "y"], **kwargs):
+    return mod_range(subplots, axes=axes, val=get_common_range(subplots, axes=axes, **kwargs))
+
+def get_figure(height=800, width=1000, ticksize=32, font_size=40, margin=None, font_family="sans-serif", hovermode=False, delete_axes=False, **kwargs):
     fig = go.Figure(layout=dict(margin=dict(l=100, r=20, b=80, t=20, pad=1) if margin is None else margin,
                                 height=height, width=width, yaxis=dict(tickfont_size=ticksize),
                                 xaxis=dict(tickfont_size=ticksize), font_size=font_size, legend_font_size=font_size,
                                 font_family=font_family, hovermode=hovermode,
                                 **kwargs))
     if delete_axes:
-        fig.update_layout(**get_delete_axes(0), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        fig.update_layout(**mod_delete_axes(0), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     return fig
 
-def get_alternate_dashes(reps=10):
-    return ["solid", "dash", "dot"] * reps
+def get_subplots(cols, rows=1, horizontal_spacing=0.03, vertical_spacing=0.03, height=None, width=2500, ticksize=32, font_size=40, font_family="sans-serif",
+                 hovermode=False, delete_axes=False, shared_xaxes=True, shared_yaxes=True, layout_kwargs={}, 
+                 **make_subplots_kwargs):
+    height = 800*rows if height is None else height
+    fig = make_subplots(figure=go.Figure(layout=dict(margin=dict(l=100, r=20, b=80, t=60, pad=1), height=height, width=width)),
+                        shared_yaxes=shared_yaxes, shared_xaxes=shared_xaxes,                        
+                        horizontal_spacing=horizontal_spacing, vertical_spacing=vertical_spacing, rows=rows, cols=cols,
+                        **make_subplots_kwargs
+                       )
+                    
+    fig.for_each_annotation(lambda a: a.update(font={'size':font_size, "family":font_family}))
+    fig.update_layout(**mod_ticksize(val=ticksize), legend_font_size=font_size, hovermode=hovermode, **layout_kwargs)
+    if delete_axes:
+        fig.update_layout(**mod_delete_axes(cols*rows), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    return fig
 
 def transparent_colorscale(fig, threshold=1e-10):
     """Values below threshold are invisible."""
@@ -73,6 +90,11 @@ def transparent_colorscale(fig, threshold=1e-10):
     new_colorscale = ((0, 'rgba(0,0,0,0)'), new_low_limit, *colorscale[1:])
     return new_colorscale
 
-def color_std(color, opacity=0.2):
-    """Colors for the band y_mean +- y_std"""
-    return "rgba" + str((*ImageColor.getrgb(color), opacity))
+def multiindex_to_label(i, depth=2):
+    return [i.get_level_values(k).to_list() for k in range(depth)]
+
+def set_multicategory_from_df(fig, df):
+    fig.update_layout(xaxis_type="multicategory", yaxis_type="multicategory")
+    fig.data[0]["x"] = multiindex_to_label(df.columns)
+    fig.data[0]["y"] = multiindex_to_label(df.index)
+    return

@@ -9,12 +9,11 @@ from rpy2.robjects import r, pandas2ri, numpy2ri
 from rpy2.robjects.packages import importr
 pandas2ri.activate()
 ro.numpy2ri.activate()
-from ._helper import attr_preprocess
+from ._helper import attr_preprocess, load_R_pkg
 
-#resample = importr("resample") # resample package for bootstrapping / permutation tests -> python env
     
 def stat_computer(obj_name, nsamples=1):
-    r("library(data.table)")
+    load_R_pkg("data.table")
     if nsamples == 1:
         return r(f"{obj_name}$stats") 
     else:
@@ -30,7 +29,7 @@ def bootstrap(x, method, y=None, stat="mean", N=int(1e5), seed=0, block_size=100
     Returns: bootstrap object (R)
     """
     kwargs_str = attr_preprocess(bootstrap, locals())
-    r("library(resample)")
+    load_R_pkg("resample")
     if y is None: # one sample       
         if method == "bootstrapT":
             ro.globalenv["bs"] = r(f"bootstrap(x, c({stat} = {stat}(x), sd = sd(x)), R=N, seed=0, block.size=block.size {kwargs_str})")
@@ -52,7 +51,8 @@ def CI_bootstrap(x, y=None, stat="mean", method="bootstrapT", expand=True, alpha
     NOTE: s2 will have non-zero bootstrap bias because it is not functional.
     
     Attrs:
-        - method: ["t", "percentile", "bca", "bootstrapT"]
+        - method: ["t", "percentile", "bca", "bootstrapT"].
+        - alternative: ["two-sided", "less", "greater"].
     """
     if probs is None:
         if alternative == "less":
@@ -65,9 +65,11 @@ def CI_bootstrap(x, y=None, stat="mean", method="bootstrapT", expand=True, alpha
             raise ValueError(f"alternative {alternative} not valid. Available: 'greater', 'less', 'two-sided'")
             
     bs = bootstrap(x, method, y=y, stat=stat, **kwargs)
+    
     if method == "bootstrapT":
         CI = r(f"CI.{method}(bs, probs=probs)") # bootstrap T is not affected by narrowness bias. Table 6
     else:
+        ro.globalenv["expand"] = expand
         CI = r(f"CI.{method}(bs, probs=probs, expand=expand)")
     if CI.shape[0] == 1:
         CI = CI[0]
@@ -90,7 +92,7 @@ def permutation(x, y=None, stat="mean", N=int(1e5), seed=0, block_size=1000,  **
     The implementation in numba is faster and includes pairing option, which this one does not.
     """
     kwargs_str = attr_preprocess(permutation, locals())
-    r("library(resample)")        
+    load_R_pkg("resample")   
     if y is None: # one sample       
         ro.globalenv["perm"] = r(f"permutationTest(x, c({stat} = {stat}(x)), R=N, seed=0, block.size=block.size {kwargs_str})")
     else:

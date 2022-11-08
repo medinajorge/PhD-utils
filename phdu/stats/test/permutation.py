@@ -1,5 +1,5 @@
 """
-2-sample permutation test, with/without pairing, for the difference and the ratio.
+2-sample permutation test, with/without pairing (including block pairing), for the difference and the ratio.
 
 Only implemented for the mean and median. Check functions starting with underscore to implement other statistics.
 Will be refined in the future.
@@ -42,6 +42,57 @@ def _permutation_test_2sample_paired(X1, X2, stat_func, ratio=False, N=int(1e6)-
         X_still = X_paired[:, ~shuffle]
         X_perm = np.hstack((X_shifted, X_still))
         perm_sample[i] = aux(X_perm)
+    
+    if alternative == "greater":
+        return (1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1)
+    elif alternative == "less":
+        return (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+    elif alternative == "two-sided":
+        return 2 * np.fmin((1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1),
+                           (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+                          )
+    else:
+        raise ValueError("alternative not valid")
+        
+def _permutation_test_2sample_paired_block(X, Y, stat_func, ratio=False, N=int(1e6)-1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+    """
+    Permutation test for paired blocks. Permutations occur only between blocks: X1(block i) <-> X2(block i). 
+    Numba won't compile. This is a sketch such that the only thing to implement is stat_func.
+    
+    Attrs:
+            X, Y:                          ragged arrays or tuples. Each element is an array containing the results for a block. 
+            alternative: 
+                                           - greater:    H0: mu_1 / mu_2 < observed,       H1: mu_1 / mu_2  >= observed  
+                         ratio             - less:       H0: mu_1 / mu_2 > observed,       H1: mu_1 / mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 / mu_2 = observed,       H1: mu_1 / mu_2  != observed 
+           
+                                           - greater:    H0: mu_1 - mu_2 < observed,       H1: mu_1 - mu_2  >= observed  
+                         not ratio         - less:       H0: mu_1 - mu_2 > observed,       H1: mu_1 - mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 - mu_2 = observed,       H1: mu_1 - mu_2  != observed 
+    Returns: p-value
+    """
+    if ratio:
+        def aux(X1, X2):
+            return stat_func(X1) / stat_func(X2)
+    else:
+        def aux(X1, X2):
+            return stat_func(X1) - stat_func(X2)
+        
+    def stack(arr_list):
+        return np.array([a for arr in arr_list for a in arr])
+        
+    stat_0 = aux(stack(X), stack(Y))    
+    perm_sample = np.empty((N))
+    np.random.seed(seed)
+    for i in range(N):
+        Xi = []
+        Yi = []
+        for xi, yi in zip(X, Y):
+            z = np.hstack((xi, yi))
+            np.random.shuffle(z)
+            Xi.append(z[:xi.size])
+            Yi.append(z[xi.size:])
+        perm_sample[i] = aux(stack(Xi), stack(Yi))
     
     if alternative == "greater":
         return (1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1)
@@ -144,6 +195,60 @@ def permutation_test_2sample_paired_median(X1, X2, ratio=False, N=int(1e6)-1, al
     else:
         raise ValueError("alternative not valid")
 
+        
+@njit
+def permutation_test_2sample_paired_block_median(X, Y, ratio=False, N=int(1e6)-1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+    """
+    Permutation test for the mean for paired blocks. Permutations occur only between blocks: X1(block i) <-> X2(block i). 
+    Numba won't compile. This is a sketch such that the only thing to implement is stat_func.
+    
+    Attrs:
+            X, Y:                          ragged arrays or tuples. Each element is an array containing the results for a block. 
+            alternative: 
+                                           - greater:    H0: mu_1 / mu_2 < observed,       H1: mu_1 / mu_2  >= observed  
+                         ratio             - less:       H0: mu_1 / mu_2 > observed,       H1: mu_1 / mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 / mu_2 = observed,       H1: mu_1 / mu_2  != observed 
+           
+                                           - greater:    H0: mu_1 - mu_2 < observed,       H1: mu_1 - mu_2  >= observed  
+                         not ratio         - less:       H0: mu_1 - mu_2 > observed,       H1: mu_1 - mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 - mu_2 = observed,       H1: mu_1 - mu_2  != observed 
+    Returns: p-value
+    """
+    if ratio:
+        def aux(X1, X2):
+            return np.median(X1) / np.median(X2)
+    else:
+        def aux(X1, X2):
+            return np.median(X1) - np.median(X2)
+        
+    def stack(arr_list):
+        return np.array([a for arr in arr_list for a in arr])
+        
+    stat_0 = aux(stack(X), stack(Y))    
+    perm_sample = np.empty((N))
+    np.random.seed(seed)
+    for i in range(N):
+        Xi = []
+        Yi = []
+        for xi, yi in zip(X, Y):
+            z = np.hstack((xi, yi))
+            np.random.shuffle(z)
+            Xi.append(z[:xi.size])
+            Yi.append(z[xi.size:])
+        perm_sample[i] = aux(stack(Xi), stack(Yi))
+    
+    if alternative == "greater":
+        return (1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1)
+    elif alternative == "less":
+        return (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+    elif alternative == "two-sided":
+        return 2 * np.fmin((1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1),
+                           (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+                          )
+    else:
+        raise ValueError("alternative not valid")
+        
+        
 @njit    
 def permutation_test_2sample_not_paired_median(X1, X2, ratio=False, N=int(1e6) - 1, alternative="two-sided", tolerance=1.5e-8, seed=0):
     """
@@ -168,7 +273,7 @@ def permutation_test_2sample_not_paired_median(X1, X2, ratio=False, N=int(1e6) -
         def aux(X, n1):
             return np.median(X[:n1]) - np.median(X[n1:])
     X = np.hstack((X1, X2))
-    stat_0 = aux(X)
+    stat_0 = aux(X, n1)
        
     perm_sample = np.empty((N)) # permutation distribution
     np.random.seed(seed)
@@ -186,8 +291,7 @@ def permutation_test_2sample_not_paired_median(X1, X2, ratio=False, N=int(1e6) -
                           )
     else:
         raise ValueError("alternative not valid")
-
-
+        
 @njit
 def permutation_test_2sample_paired_mean(X1, X2, ratio=False, N=int(1e6)-1, alternative="two-sided", tolerance=1.5e-8, seed=0):
     """
@@ -234,9 +338,61 @@ def permutation_test_2sample_paired_mean(X1, X2, ratio=False, N=int(1e6)-1, alte
                           )
     else:
         raise ValueError("alternative not valid")
+
+@njit
+def permutation_test_2sample_paired_block_mean(X, Y, ratio=False, N=int(1e6)-1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+    """
+    Permutation test for the mean for paired blocks. Permutations occur only between blocks: X1(block i) <-> X2(block i). 
+    Numba won't compile. This is a sketch such that the only thing to implement is stat_func.
+    
+    Attrs:
+            X, Y:                          ragged arrays or tuples. Each element is an array containing the results for a block. 
+            alternative: 
+                                           - greater:    H0: mu_1 / mu_2 < observed,       H1: mu_1 / mu_2  >= observed  
+                         ratio             - less:       H0: mu_1 / mu_2 > observed,       H1: mu_1 / mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 / mu_2 = observed,       H1: mu_1 / mu_2  != observed 
+           
+                                           - greater:    H0: mu_1 - mu_2 < observed,       H1: mu_1 - mu_2  >= observed  
+                         not ratio         - less:       H0: mu_1 - mu_2 > observed,       H1: mu_1 - mu_2  <= observed  
+                                           - two-sided:  H0: mu_1 - mu_2 = observed,       H1: mu_1 - mu_2  != observed 
+    Returns: p-value
+    """
+    if ratio:
+        def aux(X1, X2):
+            return np.mean(X1) / np.mean(X2)
+    else:
+        def aux(X1, X2):
+            return np.mean(X1) - np.mean(X2)
+        
+    def stack(arr_list):
+        return np.array([a for arr in arr_list for a in arr])
+        
+    stat_0 = aux(stack(X), stack(Y))    
+    perm_sample = np.empty((N))
+    np.random.seed(seed)
+    for i in range(N):
+        Xi = []
+        Yi = []
+        for xi, yi in zip(X, Y):
+            z = np.hstack((xi, yi))
+            np.random.shuffle(z)
+            Xi.append(z[:xi.size])
+            Yi.append(z[xi.size:])
+        perm_sample[i] = aux(stack(Xi), stack(Yi))
+    
+    if alternative == "greater":
+        return (1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1)
+    elif alternative == "less":
+        return (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+    elif alternative == "two-sided":
+        return 2 * np.fmin((1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1),
+                           (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+                          )
+    else:
+        raise ValueError("alternative not valid")
         
 @njit
-def permutation_test_2sample_mean(X1, X2, ratio=False, N=int(1e6) - 1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+def permutation_test_2sample_not_paired_mean(X1, X2, ratio=False, N=int(1e6) - 1, alternative="two-sided", tolerance=1.5e-8, seed=0):
     """
     Permutation test for the differences or ratio of the means (non-paired).
     

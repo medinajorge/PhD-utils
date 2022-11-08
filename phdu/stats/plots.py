@@ -1,11 +1,15 @@
 """
 Stats plots (just a test)
 """
-import statsmodels.api as sm
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
+try:
+    import statsmodels.api as sm
+    import matplotlib.pyplot as plt
+    import plotly.graph_objects as go
+except:
+    pass
+
 from . import _preprocess
-from utils.plots.plotly import get_figure
+from ..plots.plotly import get_figure
 
 def qqplot(x, alpha=0.3, ms=20):
         pp = sm.ProbPlot(x, fit=True)
