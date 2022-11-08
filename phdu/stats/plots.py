@@ -9,7 +9,7 @@ except:
     pass
 
 from . import _preprocess
-from ..plots.plotly import get_figure
+from .. import plots
 
 def qqplot(x, alpha=0.3, ms=20):
         pp = sm.ProbPlot(x, fit=True)
@@ -18,7 +18,7 @@ def qqplot(x, alpha=0.3, ms=20):
         return plt.gcf()
     
 def density_kernel(*X, cov_factor=0.1, n_points=300, **kwargs):
-    fig = get_figure(yaxis_title="Probability density", **kwargs)
+    fig = plots.plotly.get_figure(yaxis_title="Probability density", **kwargs)
     for x in X:
         xs, density = _preprocess.density_kernel(x, cov_factor=cov_factor, n_points=n_points)
         
