@@ -41,7 +41,7 @@ def mod_delete_axes(fig, axes=["x", "y"]):
     non_visible_axes_specs = dict(visible=False, showgrid=False, zeroline=False) 
     return {f"{ax}axis{i}": non_visible_axes_specs for ax in axes for i in [""] + [*range(1, get_nplots(fig) + 1)]}
 
-def mod_layout(fig, val, key, axes=["x","y"]):
+def mod_layout(fig, val, axes=["x","y"], key=None):
     if isinstance(val, Iterable) and not isinstance(val, str):
         return {"{}axis{}_{}".format(ax, i, key): v for (ax, v) in zip(axes, val) for i in [""] + [*range(1, get_nplots(fig) + 1)]}
     else:
