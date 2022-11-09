@@ -11,12 +11,13 @@ try:
 except:
     warnings.warn("'plotly' not available.", RuntimeWarning)
 from collections import defaultdict
+from collections.abc import Iterable
 from functools import partial
 from .. import _helper
 
-def get_common_range(subplots, axes=["x", "y"], offset_mpl=[0,0], offset_constant=[0,0]):
+def get_common_range(fig, axes=["x", "y"], offset_mpl=[0,0], offset_constant=[0,0]):
     data = defaultdict(list)
-    for plot in subplots.data:
+    for plot in fig.data:
         for ax, off_m, off_c in zip(axes, offset_mpl, offset_constant):          
             if hasattr(plot, f"error_{ax}") and getattr(plot, f"error_{ax}").array is not None:
                 additions = [np.array([*plot[f"error_{ax}"]["array"]]), -np.array([*plot[f"error_{ax}"]["array"]])] 
@@ -36,25 +37,25 @@ def get_common_range(subplots, axes=["x", "y"], offset_mpl=[0,0], offset_constan
 def get_nplots(fig):
     return sum(1 for x in fig.layout if "xaxis" in x)
 
-def mod_delete_axes(subplots, axes=["x", "y"]):
+def mod_delete_axes(fig, axes=["x", "y"]):
     non_visible_axes_specs = dict(visible=False, showgrid=False, zeroline=False) 
-    return {f"{ax}axis{i}": non_visible_axes_specs for ax in axes for i in [""] + [*range(1, subplots + 1)]}
+    return {f"{ax}axis{i}": non_visible_axes_specs for ax in axes for i in [""] + [*range(1, get_nplots(fig) + 1)]}
 
-def mod_layout(subplots, key, val, axes=["x","y"]):
-    if len(val) == len(axes):
-        return {"{}axis{}_{}".format(ax, i, key): v for (ax, v) in zip(axes, val) for i in [""] + [*range(1, subplots + 1)]}
+def mod_layout(fig, val, key, axes=["x","y"]):
+    if isinstance(val, Iterable) and not isinstance(val, str):
+        return {"{}axis{}_{}".format(ax, i, key): v for (ax, v) in zip(axes, val) for i in [""] + [*range(1, get_nplots(fig) + 1)]}
     else:
-        return {"{}axis{}_{}".format(ax, i, key): val for ax in axes for i in [""] + [*range(1, subplots + 1)]}
+        return {"{}axis{}_{}".format(ax, i, key): val for ax in axes for i in [""] + [*range(1, get_nplots(fig) + 1)]}
 
 mod_dashes           = partial(_helper.sequence_or_stream, ["solid", "dash", "dot"])
 mod_ticksize         = partial(mod_layout, key="tickfont_size", val=24)
 mod_logaxes          = partial(mod_layout, key="type", val="log") 
 mod_expfmt           = partial(mod_layout, key="exponentformat", val="power")
 mod_range            = partial(mod_layout, key="range")
-mod_logaxes_expfmt   = lambda subplots, axes=["x", "y"]: {**mod_logaxes(subplots, axes=axes), **mod_expfmt(subplots, axes=axes)}
+mod_logaxes_expfmt   = lambda fig, axes=["x", "y"]: {**mod_logaxes(fig, axes=axes), **mod_expfmt(fig, axes=axes)}
 
-def mod_common_range(subplots, axes=["x", "y"], **kwargs):
-    return mod_range(subplots, axes=axes, val=get_common_range(subplots, axes=axes, **kwargs))
+def mod_common_range(fig, axes=["x", "y"], **kwargs):
+    return mod_range(fig, axes=axes, val=get_common_range(fig, axes=axes, **kwargs))
 
 def get_figure(height=800, width=1000, ticksize=32, font_size=40, margin=None, font_family="sans-serif", hovermode=False, delete_axes=False, **kwargs):
     fig = go.Figure(layout=dict(margin=dict(l=100, r=20, b=80, t=20, pad=1) if margin is None else margin,
@@ -63,7 +64,7 @@ def get_figure(height=800, width=1000, ticksize=32, font_size=40, margin=None, f
                                 font_family=font_family, hovermode=hovermode,
                                 **kwargs))
     if delete_axes:
-        fig.update_layout(**mod_delete_axes(0), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        fig.update_layout(**mod_delete_axes(fig), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     return fig
 
 def get_subplots(cols, rows=1, horizontal_spacing=0.03, vertical_spacing=0.03, height=None, width=2500, ticksize=32, font_size=40, font_family="sans-serif",
@@ -77,9 +78,9 @@ def get_subplots(cols, rows=1, horizontal_spacing=0.03, vertical_spacing=0.03, h
                        )
                     
     fig.for_each_annotation(lambda a: a.update(font={'size':font_size, "family":font_family}))
-    fig.update_layout(**mod_ticksize(val=ticksize), legend_font_size=font_size, hovermode=hovermode, **layout_kwargs)
+    fig.update_layout(**mod_ticksize(fig, val=ticksize), legend_font_size=font_size, hovermode=hovermode, **layout_kwargs)
     if delete_axes:
-        fig.update_layout(**mod_delete_axes(cols*rows), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        fig.update_layout(**mod_delete_axes(fig), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     return fig
 
 def transparent_colorscale(fig, threshold=1e-10):
