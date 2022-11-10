@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='phdu',
-    version='1.0.b3',
+    version='1.0.b4',
     author="Jorge Medina Hernández",
     author_email='medinahdezjorge@gmail.com',
     packages=find_packages("."),
@@ -21,6 +21,7 @@ setup(
         "Topic :: Office/Business",
         "Intended Audience :: Science/Research",
     ],
+    python_requires=">=3",
     install_requires=[
         'tidypath',     
         'numba',
