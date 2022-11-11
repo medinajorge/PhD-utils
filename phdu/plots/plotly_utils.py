@@ -41,21 +41,28 @@ def mod_delete_axes(fig, axes=["x", "y"]):
     non_visible_axes_specs = dict(visible=False, showgrid=False, zeroline=False) 
     return {f"{ax}axis{i}": non_visible_axes_specs for ax in axes for i in [""] + [*range(1, get_nplots(fig) + 1)]}
 
-def mod_layout(fig, val, axes=["x","y"], key=None):
-    if isinstance(val, Iterable) and not isinstance(val, str):
-        return {"{}axis{}_{}".format(ax, i, key): v for (ax, v) in zip(axes, val) for i in [""] + [*range(1, get_nplots(fig) + 1)]}
+def get_mod_layout(key, val=None):
+    def mod_layout(fig, val, axes=["x","y"]):
+        if isinstance(val, Iterable) and not isinstance(val, str):
+            return {"{}axis{}_{}".format(ax, i, key): v for (ax, v) in zip(axes, val) for i in [""] + [*range(1, get_nplots(fig) + 1)]}
+        else:
+            return {"{}axis{}_{}".format(ax, i, key): val for ax in axes for i in [""] + [*range(1, get_nplots(fig) + 1)]}
+    if val is None:
+        return mod_layout
     else:
-        return {"{}axis{}_{}".format(ax, i, key): val for ax in axes for i in [""] + [*range(1, get_nplots(fig) + 1)]}
+        def mod_layout_fixed_val(fig, axes=["x", "y"]):
+            return mod_layout(fig, val, axes)
+        return mod_layout_fixed_val
 
 mod_dashes           = partial(_helper.sequence_or_stream, ["solid", "dash", "dot"])
-mod_ticksize         = partial(mod_layout, key="tickfont_size", val=24)
-mod_logaxes          = partial(mod_layout, key="type", val="log") 
-mod_expfmt           = partial(mod_layout, key="exponentformat", val="power")
-mod_range            = partial(mod_layout, key="range")
+mod_ticksize         = get_mod_layout("tickfont_size")
+mod_logaxes          = get_mod_layout("type", "log") 
+mod_expfmt           = get_mod_layout("exponentformat", "power")
+mod_range            = get_mod_layout("range")
 mod_logaxes_expfmt   = lambda fig, axes=["x", "y"]: {**mod_logaxes(fig, axes=axes), **mod_expfmt(fig, axes=axes)}
 
 def mod_common_range(fig, axes=["x", "y"], **kwargs):
-    return mod_range(fig, axes=axes, val=get_common_range(fig, axes=axes, **kwargs))
+    return mod_range(fig, val=get_common_range(fig, axes=axes, **kwargs), axes=axes)
 
 def get_figure(height=800, width=1000, ticksize=32, font_size=40, margin=None, font_family="sans-serif", hovermode=False, delete_axes=False, **kwargs):
     fig = go.Figure(layout=dict(margin=dict(l=100, r=20, b=80, t=20, pad=1) if margin is None else margin,
