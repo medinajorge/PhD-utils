@@ -42,6 +42,6 @@ def expand_sequences(df, dt=1, maxlen=None):
             maxlen = int(df.applymap(lambda x: x.size).values.max())
         df_padded = df.applymap(lambda x: np.hstack((x, np.NaN*np.empty((maxlen-x.size)))))
     df_padded_arr = np.stack([np.vstack(x) for x in df_padded.values]) # shape (df.shape[0], df.shape[1], time_steps)
-    return pd.DataFrame(df_full_arr.reshape((df.shape[0], -1)), 
+    return pd.DataFrame(df_padded_arr.reshape((df.shape[0], -1)), 
                         index = df.index, 
                         columns = pd.MultiIndex.from_product([df.columns, dt*np.arange(maxlen)]))
