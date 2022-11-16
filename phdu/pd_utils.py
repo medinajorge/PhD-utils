@@ -1,7 +1,10 @@
 """
+pandas utils
+
 Includes    latex_table:      f:  pd.DataFrame -> latex table.
 """
 import pandas as pd
+import numpy as np
 from functools import reduce     
 
 def latex_table(df, index=False, **kwargs):
@@ -25,7 +28,7 @@ def latex_table(df, index=False, **kwargs):
     print(formatter(df.to_latex(index=index, column_format=col_format, **kwargs)))
     return
 
-def expand_sequences(df, dt=0.5, maxlen=None):
+def expand_sequences(df, dt=1, maxlen=None):
     """
     Input: DataFrame. Each element is an array and all arrays start at the same time and have the same time step dt.
     Returns: MultiColumn DataFrame: (df.index,  (df.columns, time_steps))
@@ -33,12 +36,12 @@ def expand_sequences(df, dt=0.5, maxlen=None):
     if df.isna().values.any():
         if maxlen is None:
             maxlen = int(df.applymap(lambda x: x.size if isinstance(x, np.ndarray) else np.NaN).max().max())
-        df_full = df.applymap(lambda x: np.hstack((x, np.NaN*np.empty((maxlen-x.size)))) if isinstance(x, np.ndarray) else np.NaN*np.empty((maxlen)))
+        df_padded = df.applymap(lambda x: np.hstack((x, np.NaN*np.empty((maxlen-x.size)))) if isinstance(x, np.ndarray) else np.NaN*np.empty((maxlen)))
     else:
         if maxlen is None:
             maxlen = int(df.applymap(lambda x: x.size).values.max())
-        df_full = df.applymap(lambda x: np.hstack((x, np.NaN*np.empty((maxlen-x.size)))))
-    df_full_arr = np.stack([np.vstack(x) for x in df_full.values]) # shape (df.shape[0], df.shape[1], time_steps)
+        df_padded = df.applymap(lambda x: np.hstack((x, np.NaN*np.empty((maxlen-x.size)))))
+    df_padded_arr = np.stack([np.vstack(x) for x in df_padded.values]) # shape (df.shape[0], df.shape[1], time_steps)
     return pd.DataFrame(df_full_arr.reshape((df.shape[0], -1)), 
                         index = df.index, 
                         columns = pd.MultiIndex.from_product([df.columns, dt*np.arange(maxlen)]))
