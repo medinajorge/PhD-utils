@@ -23,3 +23,7 @@ def sequence_or_stream(x, maxlen=None):
     else:
         mod = maxlen % x_len
         return x * (maxlen // x_len) + ([] if mod == 0 else x[:mod])
+
+def getopt_printer(opts):
+    """Prints getopt input in a readable way."""
+    print('\n'.join(f'{opt} => {arg}' for opt, arg in (("Args", "Values"), *opts)))
