@@ -122,8 +122,8 @@ def violin(df, CI=None, CI_line="mean", CI_width=0.05):
     if CI is not None:
         CI_color = color_std(plotly_default_colors(maxlen=2)[-1], opacity=0.2)
         CI_stats = getattr(df.groupby(x), CI_line)().values.squeeze()
-        for i, (ci, ci_stat) in enumerate(zip(CI, CI_stats)):
-            fig.add_trace(go.Scatter(x=[f"Trial {i+2}"]*2, y=ci, mode="markers",
+        for i, (ci, ci_stat, x_val) in enumerate(zip(CI, CI_stats, df[x].unique())):
+            fig.add_trace(go.Scatter(x=[x_val]*2, y=ci, mode="markers",
                                      marker=dict(color=CI_color, symbol=["arrow-bar-up", "arrow-bar-down"], size=8, line=dict(color="gray", width=2))
                                      , showlegend=False))
             fig.add_shape(type="rect", xref="x", yref="y", line=dict(color="gray",width=3), fillcolor=CI_color, x0=i-CI_width, y0=ci[0], x1=i+CI_width, y1=ci[1])
