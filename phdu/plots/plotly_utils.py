@@ -108,24 +108,36 @@ def set_multicategory_from_df(fig, df):
     fig.data[0]["y"] = multiindex_to_label(df.index)
     return
 
-def violin(df, CI=None, CI_line="mean", CI_width=0.05):
+def CI_plot(x, y, CI, width=0.05, color='rgba(255, 127, 14, 0.2)', fig=None, x_title=None, y_title=None):
+    """
+    Box plot where the box corresponds to the CI.
+    
+    Attributes:
+        - x:    x coordinate for the CI
+        - y:    value of the magnitude for the sample. Example: the mean if CI is a CI for the mean.
+        - CI:   Confidence interval for y.
+    """
+    if fig is None:
+        fig = get_figure(xaxis_title=x_title, yaxis_title=y_title)
+    for i, (ci, x_val, ci_stat) in enumerate(zip(CI, x, y)):
+        fig.add_trace(go.Scatter(x=[x_val]*2, y=ci, mode="markers",
+                                 marker=dict(color=color, symbol=["arrow-bar-up", "arrow-bar-down"], size=8, line=dict(color="gray", width=2))
+                                 , showlegend=False))
+        fig.add_shape(type="rect", xref="x", yref="y", line=dict(color="gray",width=3), fillcolor=color, x0=i-width, y0=ci[0], x1=i+width, y1=ci[1])
+        fig.add_shape(type="line", xref="x", yref="y", line=dict(color="gray", width=4),  x0=i-width, y0=ci_stat, x1=i+width, y1=ci_stat)
+    return fig
+    
+def violin(df, CI=None, CI_line="mean", **CI_kwargs):
     """
     Violin plot including optionally the CI.
     
     Attributes:
-        -df:   melted DataFrame. Contains only two columns: variable name (x) and value (y).
-                                 The column names set the OX and OY labels.
+        - df:   melted DataFrame. Contains only two columns: variable name (x) and value (y).
+                                  The column names set the OX and OY labels.
     """
     x, y = df.columns
     fig = get_figure(xaxis_title=x, yaxis_title=y)
     fig.add_trace(go.Violin(x=df[x], y=df[y], showlegend=False))
     if CI is not None:
-        CI_color = color_std(plotly_default_colors(maxlen=2)[-1], opacity=0.2)
-        CI_stats = getattr(df.groupby(x), CI_line)().values.squeeze()
-        for i, (ci, ci_stat, x_val) in enumerate(zip(CI, CI_stats, df[x].unique())):
-            fig.add_trace(go.Scatter(x=[x_val]*2, y=ci, mode="markers",
-                                     marker=dict(color=CI_color, symbol=["arrow-bar-up", "arrow-bar-down"], size=8, line=dict(color="gray", width=2))
-                                     , showlegend=False))
-            fig.add_shape(type="rect", xref="x", yref="y", line=dict(color="gray",width=3), fillcolor=CI_color, x0=i-CI_width, y0=ci[0], x1=i+CI_width, y1=ci[1])
-            fig.add_shape(type="line", xref="x", yref="y", line=dict(color="gray", width=4),  x0=i-CI_width, y0=ci_stat, x1=i+CI_width, y1=ci_stat)
+        fig = CI_plot(df[x].unique(), getattr(df.groupby(x), CI_line)().values.squeeze(), CI, fig=fig, **CI_kwargs)
     return fig
