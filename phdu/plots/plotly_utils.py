@@ -16,23 +16,31 @@ from functools import partial
 from .. import _helper
 from .base import color_std, plotly_default_colors
 
-def get_common_range(fig, axes=["x", "y"], offset_mpl=[0,0], offset_constant=[0,0]):
+def add_offset(x0, xf, offset=0.05):
+    """x0 (xf) == lower (upper) limit for the axis range."""
+    inverse_transform = lambda *xs: [(xf-x0)*x + x0 for x in xs]
+    return inverse_transform(-offset, 1+offset)
+    
+def get_common_range(fig, axes=["x", "y"], offset=[0.05, 0.05]):
     data = defaultdict(list)
     for plot in fig.data:
-        for ax, off_m, off_c in zip(axes, offset_mpl, offset_constant):          
+        for ax in axes:          
             if hasattr(plot, f"error_{ax}") and getattr(plot, f"error_{ax}").array is not None:
                 additions = [np.array([*plot[f"error_{ax}"]["array"]]), -np.array([*plot[f"error_{ax}"]["array"]])] 
             else:
                 additions = [0]
             for addition in additions:
-                arr = (plot[ax] + addition)[~np.isnan(plot[ax])]
+                try:
+                    arr = (plot[ax] + addition)[~np.isnan(plot[ax])]
+                except:
+                    continue
                 arr_min, arr_max = arr.min(), arr.max()
-                data[f"{ax}-min"].append(arr_min * (1-off_m if arr_min > 0 else 1+off_m) - off_c)
-                data[f"{ax}-max"].append(arr_max * (1+off_m if arr_max > 0 else 1-off_m) + off_c)
+                data[f"{ax}-min"].append(arr_min)
+                data[f"{ax}-max"].append(arr_max)
     for k, v in data.items():
         func = min if "min" in k else max
         data[k] = func(v)
-    ranges = {ax: [data[f"{ax}-min"], data[f"{ax}-max"]] for ax in axes}
+    ranges = {ax: add_offset(data[f"{ax}-min"], data[f"{ax}-max"], offset=off) for ax, off in zip(axes, offset)}
     return ranges
 
 def get_nplots(fig):
@@ -108,7 +116,7 @@ def set_multicategory_from_df(fig, df):
     fig.data[0]["y"] = multiindex_to_label(df.index)
     return
 
-def CI_plot(x, y, CI, width=0.05, color='rgba(255, 127, 14, 0.2)', fig=None, x_title=None, y_title=None):
+def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', fig=None, x_title=None, y_title=None):
     """
     Box plot where the box corresponds to the CI.
     
@@ -120,11 +128,16 @@ def CI_plot(x, y, CI, width=0.05, color='rgba(255, 127, 14, 0.2)', fig=None, x_t
     if fig is None:
         fig = get_figure(xaxis_title=x_title, yaxis_title=y_title)
     for i, (ci, x_val, ci_stat) in enumerate(zip(CI, x, y)):
-        fig.add_trace(go.Scatter(x=[x_val]*2, y=ci, mode="markers",
-                                 marker=dict(color=color, symbol=["arrow-bar-up", "arrow-bar-down"], size=8, line=dict(color="gray", width=2))
-                                 , showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_val]*2, y=ci[::-1], showlegend=False, mode="markers",
+                                 marker=dict(color=color, symbol=["arrow-bar-down", "arrow-bar-up"], size=ms, line=dict(color="gray", width=2))
+                                ))
         fig.add_shape(type="rect", xref="x", yref="y", line=dict(color="gray",width=3), fillcolor=color, x0=i-width, y0=ci[0], x1=i+width, y1=ci[1])
         fig.add_shape(type="line", xref="x", yref="y", line=dict(color="gray", width=4),  x0=i-width, y0=ci_stat, x1=i+width, y1=ci_stat)
+    if label is not None:
+        yrange = [*get_common_range(fig, axes=["y"]).values()][0]
+        fig.add_trace(go.Scatter(x=[1000], y=[1000], mode="markers", name=label, showlegend=True,
+                                 marker=dict(symbol="square", color=color, size=22), line=dict(color="gray", width=2)))
+        fig.update_layout(**mod_range(fig, ([-0.25, len(x)-0.75], yrange)))
     return fig
     
 def violin(df, CI=None, CI_line="mean", **CI_kwargs):
