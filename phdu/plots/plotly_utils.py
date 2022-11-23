@@ -139,6 +139,22 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
                                  marker=dict(symbol="square", color=color, size=22), line=dict(color="gray", width=2)))
         fig.update_layout(**mod_range(fig, ([-0.25, len(x)-0.75], yrange)))
     return fig
+
+def permtest_plot(df, H1="", colorscale="Inferno", log=True, height=800, width=1000, font_size=40, bar_len=0.9, bar_x=0.95, bar_thickness=100):
+    """H1 should not contain latex code. Use unicode and HTML for super/sub-indices."""
+    if log:
+        df = np.log10(df)
+        zmin, zmax = np.log10(0.05), 0
+        legtitle = "log<sub>10</sub>P-value"
+    else:
+        zmin, zmax = None, None
+        legtitle = "P-value"
+    fig = px.imshow(df, zmin=zmin, zmax=zmax, color_continuous_scale=colorscale)
+    fig.update_layout(coloraxis_colorbar=dict(len=bar_len, x=bar_x, title=f"{legtitle}<br>H<sub>1</sub>: {H1}", thickness=bar_thickness),
+                      height=height, width=width, font_size=font_size, hovermode=False,
+                      margin=dict(l=0, b=0, t=0, r=0)
+                     )
+    return fig
     
 def violin(df, CI=None, CI_line="mean", **CI_kwargs):
     """
