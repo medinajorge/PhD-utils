@@ -1,0 +1,419 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>phdu.stats.test package &mdash; PhD-utils 1.1.b3 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PhD-utils
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">phdu.stats.test package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-phdu.stats.test.permutation">phdu.stats.test.permutation module</a></li>
+<li><a class="reference internal" href="#module-phdu.stats.test">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PhD-utils</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>phdu.stats.test package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/phdu.stats.test.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <section id="phdu-stats-test-package">
+<h1>phdu.stats.test package<a class="headerlink" href="#phdu-stats-test-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-phdu.stats.test.permutation">
+<span id="phdu-stats-test-permutation-module"></span><h2>phdu.stats.test.permutation module<a class="headerlink" href="#module-phdu.stats.test.permutation" title="Permalink to this heading">¶</a></h2>
+<p>2-sample permutation test, with/without pairing (including block pairing), for the difference and the ratio.</p>
+<p>Only implemented for the mean and median. Check functions starting with underscore to implement other statistics.
+Will be refined in the future.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="phdu.stats.test.permutation.permutation_test_2sample_not_paired_mean">
+<span class="sig-prename descclassname"><span class="pre">phdu.stats.test.permutation.</span></span><span class="sig-name descname"><span class="pre">permutation_test_2sample_not_paired_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">999999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alternative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'two-sided'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/phdu/stats/test/permutation.html#permutation_test_2sample_not_paired_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#phdu.stats.test.permutation.permutation_test_2sample_not_paired_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Permutation test for the differences or ratio of the means (non-paired).</p>
+<dl class="simple">
+<dt>Attrs:</dt><dd><dl class="simple">
+<dt>alternative:  - greater:    H0: mu_1 - mu_2 &lt; observed,       H1: mu_1 - mu_2  &gt;= observed</dt><dd><ul class="simple">
+<li><p>less:       H0: mu_1 - mu_2 &gt; observed,       H1: mu_1 - mu_2  &lt;= observed</p></li>
+<li><p>two-sided:  H0: mu_1 - mu_2 = observed,       H1: mu_1 - mu_2  != observed</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Returns: p-value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="phdu.stats.test.permutation.permutation_test_2sample_not_paired_median">
+<span class="sig-prename descclassname"><span class="pre">phdu.stats.test.permutation.</span></span><span class="sig-name descname"><span class="pre">permutation_test_2sample_not_paired_median</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">999999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alternative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'two-sided'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/phdu/stats/test/permutation.html#permutation_test_2sample_not_paired_median"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#phdu.stats.test.permutation.permutation_test_2sample_not_paired_median" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Non-paired permutation test for the median.</p>
+</div></blockquote>
+<dl>
+<dt>Attrs:</dt><dd><blockquote>
+<div><dl>
+<dt>alternative: </dt><dd><blockquote>
+<div><ul class="simple">
+<li><p>greater:    H0: me_1 / me_2 &lt; observed,       H1: me_1 / me_2  &gt;= observed</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>ratio             - less:       H0: me_1 / me_2 &gt; observed,       H1: me_1 / me_2  &lt;= observed  </dt><dd><ul class="simple">
+<li><p>two-sided:  H0: me_1 / me_2 = observed,       H1: me_1 / me_2  != observed</p></li>
+<li><p>greater:    H0: me_1 - me_2 &lt; observed,       H1: me_1 - me_2  &gt;= observed</p></li>
+</ul>
+</dd>
+<dt>not ratio         - less:       H0: me_1 - me_2 &gt; observed,       H1: me_1 - me_2  &lt;= observed  </dt><dd><ul class="simple">
+<li><p>two-sided:  H0: me_1 - me_2 = observed,       H1: me_1 - me_2  != observed</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p>Returns: p-value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="phdu.stats.test.permutation.permutation_test_2sample_paired_block_mean">
+<span class="sig-prename descclassname"><span class="pre">phdu.stats.test.permutation.</span></span><span class="sig-name descname"><span class="pre">permutation_test_2sample_paired_block_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">999999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alternative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'two-sided'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/phdu/stats/test/permutation.html#permutation_test_2sample_paired_block_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#phdu.stats.test.permutation.permutation_test_2sample_paired_block_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Permutation test for the mean for paired blocks. Permutations occur only between blocks: X1(block i) &lt;-&gt; X2(block i). 
+Numba won’t compile. This is a sketch such that the only thing to implement is stat_func.</p>
+<dl>
+<dt>Attrs:</dt><dd><p>X, Y:                          ragged arrays or tuples. Each element is an array containing the results for a block. 
+alternative:</p>
+<blockquote>
+<div><blockquote>
+<div><ul class="simple">
+<li><p>greater:    H0: mu_1 / mu_2 &lt; observed,       H1: mu_1 / mu_2  &gt;= observed</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>ratio             - less:       H0: mu_1 / mu_2 &gt; observed,       H1: mu_1 / mu_2  &lt;= observed  </dt><dd><ul class="simple">
+<li><p>two-sided:  H0: mu_1 / mu_2 = observed,       H1: mu_1 / mu_2  != observed</p></li>
+<li><p>greater:    H0: mu_1 - mu_2 &lt; observed,       H1: mu_1 - mu_2  &gt;= observed</p></li>
+</ul>
+</dd>
+<dt>not ratio         - less:       H0: mu_1 - mu_2 &gt; observed,       H1: mu_1 - mu_2  &lt;= observed  </dt><dd><ul class="simple">
+<li><p>two-sided:  H0: mu_1 - mu_2 = observed,       H1: mu_1 - mu_2  != observed</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+<p>Returns: p-value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="phdu.stats.test.permutation.permutation_test_2sample_paired_block_median">
+<span class="sig-prename descclassname"><span class="pre">phdu.stats.test.permutation.</span></span><span class="sig-name descname"><span class="pre">permutation_test_2sample_paired_block_median</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">999999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alternative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'two-sided'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/phdu/stats/test/permutation.html#permutation_test_2sample_paired_block_median"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#phdu.stats.test.permutation.permutation_test_2sample_paired_block_median" title="Permalink to this definition">¶</a></dt>
+<dd><p>Permutation test for the mean for paired blocks. Permutations occur only between blocks: X1(block i) &lt;-&gt; X2(block i). 
+Numba won’t compile. This is a sketch such that the only thing to implement is stat_func.</p>
+<dl>
+<dt>Attrs:</dt><dd><p>X, Y:                          ragged arrays or tuples. Each element is an array containing the results for a block. 
+alternative:</p>
+<blockquote>
+<div><blockquote>
+<div><ul class="simple">
+<li><p>greater:    H0: mu_1 / mu_2 &lt; observed,       H1: mu_1 / mu_2  &gt;= observed</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>ratio             - less:       H0: mu_1 / mu_2 &gt; observed,       H1: mu_1 / mu_2  &lt;= observed  </dt><dd><ul class="simple">
+<li><p>two-sided:  H0: mu_1 / mu_2 = observed,       H1: mu_1 / mu_2  != observed</p></li>
+<li><p>greater:    H0: mu_1 - mu_2 &lt; observed,       H1: mu_1 - mu_2  &gt;= observed</p></li>
+</ul>
+</dd>
+<dt>not ratio         - less:       H0: mu_1 - mu_2 &gt; observed,       H1: mu_1 - mu_2  &lt;= observed  </dt><dd><ul class="simple">
+<li><p>two-sided:  H0: mu_1 - mu_2 = observed,       H1: mu_1 - mu_2  != observed</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+<p>Returns: p-value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="phdu.stats.test.permutation.permutation_test_2sample_paired_diffmean">
+<span class="sig-prename descclassname"><span class="pre">phdu.stats.test.permutation.</span></span><span class="sig-name descname"><span class="pre">permutation_test_2sample_paired_diffmean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">999999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alternative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'two-sided'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/phdu/stats/test/permutation.html#permutation_test_2sample_paired_diffmean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#phdu.stats.test.permutation.permutation_test_2sample_paired_diffmean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Paired permutation test optimized for the mean of the differences. about 2x faster than the default _permutation_test_2sample_paired with stat_func = np.mean.
+Coincides with the test for the differences in means. (Not as the median)
+Attrs:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>alternative:  - greater:    H0: mu(X1-X2) &lt; &lt;X1-X2&gt;_sample,       H1: mu(X1-X2) &gt;= &lt;X1-X2&gt;_sample</dt><dd><ul class="simple">
+<li><p>less:       H0: mu(X1-X2) &gt; &lt;X1-X2&gt;_sample,       H1: mu(X1-X2) &lt;= &lt;X1-X2&gt;_sample</p></li>
+<li><p>two-sided:  H0: mu(X1-X2) = &lt;X1-X2&gt;_sample,       H1: mu(X1-X2) != &lt;X1-X2&gt;_sample</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<p>Returns: p-value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="phdu.stats.test.permutation.permutation_test_2sample_paired_diffmedian">
+<span class="sig-prename descclassname"><span class="pre">phdu.stats.test.permutation.</span></span><span class="sig-name descname"><span class="pre">permutation_test_2sample_paired_diffmedian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">999999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alternative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'two-sided'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/phdu/stats/test/permutation.html#permutation_test_2sample_paired_diffmedian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#phdu.stats.test.permutation.permutation_test_2sample_paired_diffmedian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Paired permutation test optimized for the median of the differences. about 2x faster than the default _permutation_test_2sample_paired with stat_func = np.mean.
+NOTE: Does not coincide with the test for the differences in medians.</p>
+<dl class="simple">
+<dt>Attrs:</dt><dd><dl class="simple">
+<dt>alternative:  - greater:    H0: me(X1-X2) &lt; observed,       H1: me(X1-X2) &gt;= observed</dt><dd><ul class="simple">
+<li><p>less:       H0: me(X1-X2) &gt; observed,       H1: me(X1-X2) &lt;= observed</p></li>
+<li><p>two-sided:  H0: me(X1-X2) = observed,       H1: me(X1-X2) != observed.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Returns: p-value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="phdu.stats.test.permutation.permutation_test_2sample_paired_mean">
+<span class="sig-prename descclassname"><span class="pre">phdu.stats.test.permutation.</span></span><span class="sig-name descname"><span class="pre">permutation_test_2sample_paired_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">999999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alternative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'two-sided'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/phdu/stats/test/permutation.html#permutation_test_2sample_paired_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#phdu.stats.test.permutation.permutation_test_2sample_paired_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Paired permutation test for the mean</p>
+<dl>
+<dt>Attrs:</dt><dd><dl>
+<dt>alternative: </dt><dd><blockquote>
+<div><ul class="simple">
+<li><p>greater:    H0: mu_1 / mu_2 &lt; observed,       H1: mu_1 / mu_2  &gt;= observed</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>ratio             - less:       H0: mu_1 / mu_2 &gt; observed,       H1: mu_1 / mu_2  &lt;= observed  </dt><dd><ul class="simple">
+<li><p>two-sided:  H0: mu_1 / mu_2 = observed,       H1: mu_1 / mu_2  != observed</p></li>
+<li><p>greater:    H0: mu_1 - mu_2 &lt; observed,       H1: mu_1 - mu_2  &gt;= observed</p></li>
+</ul>
+</dd>
+<dt>not ratio         - less:       H0: mu_1 - mu_2 &gt; observed,       H1: mu_1 - mu_2  &lt;= observed  </dt><dd><ul class="simple">
+<li><p>two-sided:  H0: mu_1 - mu_2 = observed,       H1: mu_1 - mu_2  != observed</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Returns: p-value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="phdu.stats.test.permutation.permutation_test_2sample_paired_median">
+<span class="sig-prename descclassname"><span class="pre">phdu.stats.test.permutation.</span></span><span class="sig-name descname"><span class="pre">permutation_test_2sample_paired_median</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">999999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alternative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'two-sided'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/phdu/stats/test/permutation.html#permutation_test_2sample_paired_median"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#phdu.stats.test.permutation.permutation_test_2sample_paired_median" title="Permalink to this definition">¶</a></dt>
+<dd><p>Paired permutation test for the median.</p>
+<dl>
+<dt>Attrs:</dt><dd><dl>
+<dt>alternative: </dt><dd><blockquote>
+<div><ul class="simple">
+<li><p>greater:    H0: me_1 / me_2 &lt; observed,       H1: me_1 / me_2  &gt;= observed</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>ratio             - less:       H0: me_1 / me_2 &gt; observed,       H1: me_1 / me_2  &lt;= observed  </dt><dd><ul class="simple">
+<li><p>two-sided:  H0: me_1 / me_2 = observed,       H1: me_1 / me_2  != observed</p></li>
+<li><p>greater:    H0: me_1 - me_2 &lt; observed,       H1: me_1 - me_2  &gt;= observed</p></li>
+</ul>
+</dd>
+<dt>not ratio         - less:       H0: me_1 - me_2 &gt; observed,       H1: me_1 - me_2  &lt;= observed  </dt><dd><ul class="simple">
+<li><p>two-sided:  H0: me_1 - me_2 = observed,       H1: me_1 - me_2  != observed</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Returns: p-value</p>
+</dd></dl>
+
+</section>
+<section id="module-phdu.stats.test">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-phdu.stats.test" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2022, Jorge Medina
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

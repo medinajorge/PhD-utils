@@ -1,0 +1,260 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>phdu.plots.base &mdash; PhD-utils 1.1.b3 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> PhD-utils
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PhD-utils</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>phdu.plots.base</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for phdu.plots.base</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Helper funcs for plotting</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">colour</span> <span class="kn">import</span> <span class="n">Color</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">ImageColor</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">_helper</span>
+        
+<div class="viewcode-block" id="rows_cols"><a class="viewcode-back" href="../../../phdu.plots.html#phdu.plots.base.rows_cols">[docs]</a><span class="k">def</span> <span class="nf">rows_cols</span><span class="p">(</span><span class="n">nrows</span><span class="p">,</span> <span class="n">ncols</span><span class="p">):</span>
+    <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">divmod</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">nrows</span><span class="o">*</span><span class="n">ncols</span><span class="p">),</span> <span class="n">ncols</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span></div>
+
+<div class="viewcode-block" id="break_str"><a class="viewcode-back" href="../../../phdu.plots.html#phdu.plots.base.break_str">[docs]</a><span class="k">def</span> <span class="nf">break_str</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s2">&quot;&lt;br&gt;&quot;</span><span class="p">):</span>
+    <span class="n">x_list</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+    <span class="n">mid</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_list</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x_list</span><span class="p">[:</span><span class="n">mid</span><span class="p">]),</span> <span class="n">separator</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x_list</span><span class="p">[</span><span class="n">mid</span><span class="p">:]))</span></div>
+
+<div class="viewcode-block" id="plotly_default_colors"><a class="viewcode-back" href="../../../phdu.plots.html#phdu.plots.base.plotly_default_colors">[docs]</a><span class="k">def</span> <span class="nf">plotly_default_colors</span><span class="p">(</span><span class="n">maxlen</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;#1f77b4&#39;</span><span class="p">,</span> <span class="s1">&#39;#ff7f0e&#39;</span><span class="p">,</span>  <span class="s1">&#39;#2ca02c&#39;</span><span class="p">,</span>  <span class="s1">&#39;#d62728&#39;</span><span class="p">,</span>  <span class="s1">&#39;#9467bd&#39;</span><span class="p">,</span>  <span class="s1">&#39;#8c564b&#39;</span><span class="p">,</span>  <span class="s1">&#39;#e377c2&#39;</span><span class="p">,</span>  <span class="s1">&#39;#7f7f7f&#39;</span><span class="p">,</span>  <span class="s1">&#39;#bcbd22&#39;</span><span class="p">,</span>  <span class="s1">&#39;#17becf&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">_helper</span><span class="o">.</span><span class="n">sequence_or_stream</span><span class="p">(</span><span class="n">colors</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">maxlen</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="plotly_colors"><a class="viewcode-back" href="../../../phdu.plots.html#phdu.plots.base.plotly_colors">[docs]</a><span class="k">def</span> <span class="nf">plotly_colors</span><span class="p">(</span><span class="n">maxlen</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">cs</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;aliceblue, antiquewhite, aqua, aquamarine, azure,</span>
+<span class="s2">                beige, bisque, black, blanchedalmond, blue,</span>
+<span class="s2">                blueviolet, brown, burlywood, cadetblue,</span>
+<span class="s2">                chartreuse, chocolate, coral, cornflowerblue,</span>
+<span class="s2">                cornsilk, crimson, cyan, darkblue, darkcyan,</span>
+<span class="s2">                darkgoldenrod, darkgray, darkgrey, darkgreen,</span>
+<span class="s2">                darkkhaki, darkmagenta, darkolivegreen, darkorange,</span>
+<span class="s2">                darkorchid, darkred, darksalmon, darkseagreen,</span>
+<span class="s2">                darkslateblue, darkslategray, darkslategrey,</span>
+<span class="s2">                darkturquoise, darkviolet, deeppink, deepskyblue,</span>
+<span class="s2">                dimgray, dimgrey, dodgerblue, firebrick,</span>
+<span class="s2">                floralwhite, forestgreen, fuchsia, gainsboro,</span>
+<span class="s2">                ghostwhite, gold, goldenrod, gray, grey, green,</span>
+<span class="s2">                greenyellow, honeydew, hotpink, indianred, indigo,</span>
+<span class="s2">                ivory, khaki, lavender, lavenderblush, lawngreen,</span>
+<span class="s2">                lemonchiffon, lightblue, lightcoral, lightcyan,</span>
+<span class="s2">                lightgoldenrodyellow, lightgray, lightgrey,</span>
+<span class="s2">                lightgreen, lightpink, lightsalmon, lightseagreen,</span>
+<span class="s2">                lightskyblue, lightslategray, lightslategrey,</span>
+<span class="s2">                lightsteelblue, lightyellow, lime, limegreen,</span>
+<span class="s2">                linen, magenta, maroon, mediumaquamarine,</span>
+<span class="s2">                mediumblue, mediumorchid, mediumpurple,</span>
+<span class="s2">                mediumseagreen, mediumslateblue, mediumspringgreen,</span>
+<span class="s2">                mediumturquoise, mediumvioletred, midnightblue,</span>
+<span class="s2">                mintcream, mistyrose, moccasin, navajowhite, navy,</span>
+<span class="s2">                oldlace, olive, olivedrab, orange, orangered,</span>
+<span class="s2">                orchid, palegoldenrod, palegreen, paleturquoise,</span>
+<span class="s2">                palevioletred, papayawhip, peachpuff, peru, pink,</span>
+<span class="s2">                plum, powderblue, purple, red, rosybrown,</span>
+<span class="s2">                royalblue, saddlebrown, salmon, sandybrown,</span>
+<span class="s2">                seagreen, seashell, sienna, silver, skyblue,</span>
+<span class="s2">                slateblue, slategray, slategrey, snow, springgreen,</span>
+<span class="s2">                steelblue, tan, teal, thistle, tomato, turquoise,</span>
+<span class="s2">                violet, wheat, white, whitesmoke, yellow,</span>
+<span class="s2">                yellowgreen&quot;&quot;&quot;</span>
+    <span class="n">li</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">li</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">li</span><span class="p">]</span>
+    <span class="n">li</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">li</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">_helper</span><span class="o">.</span><span class="n">sequence_or_stream</span><span class="p">(</span><span class="n">li</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">maxlen</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="color_gradient"><a class="viewcode-back" href="../../../phdu.plots.html#phdu.plots.base.color_gradient">[docs]</a><span class="k">def</span> <span class="nf">color_gradient</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">to_hex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">Color</span><span class="p">(</span><span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">range_to</span><span class="p">(</span><span class="n">Color</span><span class="p">(</span><span class="n">end</span><span class="p">),</span> <span class="n">n</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">to_hex</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">hex</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">colors</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">colors</span></div>
+
+<div class="viewcode-block" id="color_std"><a class="viewcode-back" href="../../../phdu.plots.html#phdu.plots.base.color_std">[docs]</a><span class="k">def</span> <span class="nf">color_std</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.3</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Colors for the band y_mean +- y_std&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;rgba&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">((</span><span class="o">*</span><span class="n">ImageColor</span><span class="o">.</span><span class="n">getrgb</span><span class="p">(</span><span class="n">color</span><span class="p">),</span> <span class="n">opacity</span><span class="p">))</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2022, Jorge Medina
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
