@@ -31,6 +31,7 @@ def latex_table(df, index=False, **kwargs):
 def expand_sequences(df, dt=1, maxlen=None):
     """
     Input: DataFrame. Each element is an array and all arrays start at the same time and have the same time step dt.
+    
     Returns: MultiColumn DataFrame: (df.index,  (df.columns, time_steps))
     """
     if df.isna().values.any():

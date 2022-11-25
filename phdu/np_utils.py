@@ -4,7 +4,8 @@ from numpy.lib.stride_tricks import as_strided
 def rolling_view(x, window):
     """
     Returns rolling view (no extra memory needed) over first axis of x.
-    Output shape: (x.shape[0]-window+1, window, *x.shape[1:])
+    
+    Output shape: ``(x.shape[0]-window+1, window, *x.shape[1:])``
     """
     stride = x.strides[0]
     shape = [x.shape[0] - window + 1, window]

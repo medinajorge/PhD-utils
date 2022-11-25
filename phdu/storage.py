@@ -10,10 +10,11 @@ parent_dir =  'data'
 def move_files(keyword, folder=None, parent_dir=parent_dir, verbose=1):
     """
     Moves all files in the parent directory starting with a keyword to a folder.
-    Attributes:
-    - keyword: keyword to look for during file matching-
-    - folder: Created folder to store all files matched by the keyword
-    - parend_dir: Initial directory in which the files are contained.
+    
+    Attributes:    
+        - keyword: keyword to look for during file matching-
+        - folder: Created folder to store all files matched by the keyword
+        - parend_dir: Initial directory in which the files are contained.
     """
     folder = folder if folder is not None else keyword
     Path(os.path.join(parent_dir, folder)).mkdir(exist_ok=True, parents=True)
