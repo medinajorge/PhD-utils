@@ -20,6 +20,9 @@ Subpackage `utils.stats.tests.permutation`.
 ## Demo
 Please check the [example notebook](https://github.com/medinajorge/PhD-utils/blob/master/tests/Example.ipynb).
 
+## Documentation
+[Github pages](https://medinajorge.github.io/PhD-utils/phdu.html)
+
 ## Install
 - For the R compatible installation first install R:
 
