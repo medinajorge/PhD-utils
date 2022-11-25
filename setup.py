@@ -2,12 +2,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='phdu',
-    version='1.1.b3',
+    version='1.1.b4',
     author="Jorge Medina Hernández",
     author_email='medinahdezjorge@gmail.com',
     packages=find_packages("."),
     url='https://github.com/medinajorge/PhD-utils',
-    download_url='https://github.com/medinajorge/PhD-utils/archive/refs/tags/v1.0.0-beta.tar.gz',
+    download_url='https://github.com/medinajorge/PhD-utils/archive/refs/tags/v1.1-beta.tar.gz',
     description="Automatically store/load data in a tidy, efficient way.",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
