@@ -45,11 +45,23 @@ def delete_files_by_ext(parent_dir, extensions, verbose=1):
         print(f"Deleted {deleted} files.")        
     return
 
-def delete_stdin_files(parent_dir="nuredduna_programmes/stdin_files", verbose=1):
+def delete_stdin_files(parent_dir="nuredduna_programmes/stdin_files", verbose=1, completed_only=True, key="Done"):
     """
     Removes nuredduna standard input (stdin) files, of the form python.exxxx (s. error) and python.oxxxx (s. output).
     """
-    delete_files_by_ext(parent_dir, [".e", ".o"], verbose)
+    if completed_only:
+        deleted = 0
+        for f in os.listdir(parent_dir):
+            if f.endswith("out"):
+                ff = os.path.join(parent_dir, f)
+                if any(l.startswith(key) for l in open(ff).readlines()):
+                    os.remove(ff)
+                    os.remove("{}.err".format(os.path.splitext(ff)[0]))
+                    deleted += 1
+        if verbose:
+            print(f"Deleted {2*deleted} files ({deleted} completed programmes).")   
+    else:
+        delete_files_by_ext(parent_dir, [".e", ".o"], verbose)
     return
 
 def empty_trash(verbose=1):
