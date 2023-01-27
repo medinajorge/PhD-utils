@@ -10,6 +10,10 @@ try:
     from plotly.subplots import make_subplots
 except:
     warnings.warn("'plotly' not available.", RuntimeWarning)
+try:
+    import colorlover as cl
+except:
+    warnings.warn("'colorlover' not available.", RuntimeWarning)
 from collections import defaultdict
 from collections.abc import Iterable
 from functools import partial
@@ -170,3 +174,63 @@ def violin(df, CI=None, CI_line="mean", **CI_kwargs):
     if CI is not None:
         fig = CI_plot(df[x].unique(), getattr(df.groupby(x), CI_line)().values.squeeze(), CI, fig=fig, **CI_kwargs)
     return fig
+
+def rgb_to_hex(rgb):
+    if isinstance(rgb, str):
+        rgb = rgb_text_to_rgb(rgb)
+    return '#' + '%02x%02x%02x' % rgb
+
+def rgb_text_to_rgb(text):
+    colors = re.findall(r'rgb\((.*?)\)', text)[0]
+    return tuple(int(c) for c in colors.split(","))
+
+def rgb_to_text(rgb):
+    return 'rgb({},{},{})'.format(*rgb)
+
+def p_value_colorscale(base_cs="RdBu_r", out='rgb-text', interpolate=True, step=0.05):
+    """
+    Colorscale where color difference is proportional to the probability of a type I error.
+    Example: p=0.1 has double probability of type I error than p=0.05. 
+             p=0.5 has 10 times the probability of type I error of p=0.05.
+    """
+    cs_len = int(0.5 / step)
+    def keep_first_appearance(colorscale):
+        s, c = zip(*colorscale)
+        _, unique_idxs = np.unique(c, return_index=True)
+        unique_idxs = np.sort(unique_idxs)
+        unique_s = np.array(s)[unique_idxs]
+        unique_c = np.array(c)[unique_idxs]
+        return [[s, c] for s, c in zip(unique_s, unique_c)]
+    
+    if interpolate:
+        cs_interpolated = cl.to_rgb(cl.interp([*zip(*px.colors.get_colorscale("RdBu_r"))][1], 2*cs_len + 1))
+        cg_low = [rgb_to_hex(c) for c in cs_interpolated[:cs_len+1]]
+        cg_upper = [rgb_to_hex(c) for c in cs_interpolated[cs_len+1:]][::-1]
+        c0, cm, cf = [rgb_to_hex(c) for c in np.array(cs_interpolated)[[0, cs_len, -1]]]
+    else:
+        c0, cm, cf = [rgb_to_hex(c) for s, c in np.array(px.colors.get_colorscale(base_cs))[[0, 5, -1]]]
+        cg_low = color_gradient(c0, cm, cs_len)
+        cg_upper = color_gradient(cf, cm, cs_len)
+    r = np.arange(step, 0.5+step, step).round(3)
+    idxs = (cs_len - 1/(2*r)).astype(int)
+    lower_half = keep_first_appearance([[0, c0]] + [[r_i, cg_low[i]] for i, r_i in zip(idxs, r)])
+    upper_half = keep_first_appearance([[1, cf]] + [[r_i, cg_upper[i]] for i, r_i in zip(idxs, (1-r).round(3))])[::-1][1:]
+    colorscale = lower_half + upper_half
+    if out == 'rgb-text':
+        func = lambda c: rgb_to_text(px.colors.hex_to_rgb(c))
+    elif out == 'rgb':
+        func = px.colors.hex_to_rgb
+    elif out == 'hex':
+        func = lambda c: c
+    else:
+        raise ValueError(f"out '{out}' not valid. Available: 'rgb-text', 'rgb', 'hex'.")
+    colorscale = [[s, func(c)] for s, c in colorscale]
+    return colorscale
+
+def plot_cs(cs):
+    from IPython.display import HTML
+    if isinstance(cs[0], list):
+        _, c = zip(*cs)
+    else:
+        c = cs
+    return HTML(cl.to_html(cl.to_hsl(c)))    

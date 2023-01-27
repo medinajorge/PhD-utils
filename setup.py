@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='phdu',
-    version='1.1.b7',
+    version='1.1.b8',
     author="Jorge Medina Hernández",
     author_email='medinahdezjorge@gmail.com',
     packages=find_packages("."),
@@ -32,9 +32,10 @@ setup(
         'Pillow',
     ],
     extras_require={
-        "all": ["matplotlib", "plotly", "kaleido", "statsmodels", "rpy2"],
+        "all": ["matplotlib", "plotly", "kaleido", "statsmodels", "rpy2", "colorlover"],
         "matplotlib": "matplotlib",
-        "plotly": ["plotly", "kaleido"],
+        "plotly": ["plotly", "kaleido"],        
+        "colorlover": "colorlover",
         'statsmodels': 'statsmodels',
         "r": "rpy2"
     },
