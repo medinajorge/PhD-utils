@@ -3,6 +3,7 @@ Helper funcs for plotly figures
 """
 import numpy as np
 import pandas as pd
+import re
 import warnings
 try:
     import plotly.express as px
