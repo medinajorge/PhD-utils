@@ -45,17 +45,29 @@ def delete_files_by_ext(parent_dir, extensions, verbose=1):
         print(f"Deleted {deleted} files.")        
     return
 
-def delete_stdin_files(parent_dir="nuredduna_programmes/stdin_files", verbose=1, completed_only=True, key="Done"):
+def delete_stdin_files(parent_dir="nuredduna_programmes/stdin_files", verbose=1, completed_only=True, key="Done", key_search="any"):
     """
     Removes nuredduna standard input (stdin) files, of the form python.exxxx (s. error) and python.oxxxx (s. output).
+    key_search:  sets how the key is looked in a file line:    - any:   key in any position
+                                                               - start.
+                                                               - end.
     """
     if completed_only:
+        if key_search == "any":
+            find_key = lambda l: key in l
+        elif key_search == "start":
+            find_key = lambda l: l.startswith(key)
+        elif key_search == 'end':
+            find_key = lambda l: l.endswith(key)
+        else:
+            raise ValueError(f"key_search '{key_search}' not valid. Available: 'any', 'start', 'end'.")
+        
         deleted_programs = 0
         deleted_files = 0
         for f in os.listdir(parent_dir):
             if f.endswith("out"):
                 ff = os.path.join(parent_dir, f)
-                if any(l.startswith(key) for l in open(ff).readlines()):
+                if any(find_key(l) for l in open(ff).readlines()):
                     os.remove(ff)
                     deleted_programs += 1
                     deleted_files += 1
