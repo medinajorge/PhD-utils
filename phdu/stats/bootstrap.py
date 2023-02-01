@@ -111,8 +111,11 @@ def CI_bca(data, statistic, alternative='two-sided', alpha=0.05, R=int(2e5), acc
     theta_hat_b = resample_func(data[:,None] if data.ndim == 1 else data,
                                 statistic, R=R, **kwargs).squeeze()
     alpha_bca = _bca_interval(data, statistic, probs, theta_hat_b, account_equal, use_numba)[0]
-    
-    if alternative == 'two-sided':
+    if np.isnan(alpha_bca).all(): 
+        warnings.warn('CI shows there is only one value. Check data.', RuntimeWarning)
+        sample_stat = statistic(data)
+        return np.array([sample_stat, sample_stat])
+    elif alternative == 'two-sided':
         return  np.percentile(theta_hat_b, alpha_bca*100, axis=0)
     elif alternative == 'less':
          return np.array([-np.inf, np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0)])
