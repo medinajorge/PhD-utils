@@ -146,7 +146,7 @@ def _bca_interval(data, statistic, probs, theta_hat_b, account_equal, use_numba)
         num = z0_hat + z_alpha
         return ndtr(z0_hat + num/(1 - a_hat*num))
     alpha_bca = compute_alpha(probs[(probs != 0) & (probs != 1)])
-    if (alpha_bca > 1).any() or (alpha_bca < 0):
+    if (alpha_bca > 1).any() or (alpha_bca < 0).any():
         warnings.warn('percentiles must be in [0, 1]. bca percentiles: {}\nForcing percentiles in [0,1]...'.format(alpha_bca), RuntimeWarning)
         alpha_bca = np.clip(alpha_bca, 0, 1)
     return alpha_bca, a_hat  # return a_hat for testing
