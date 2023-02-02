@@ -3,6 +3,7 @@ Numba version of bias-corrected and accelerated (BCa) bootstrap.
 """
 import numpy as np
 from numba import njit, boolean
+from itertools import product
 import warnings
 try:
     from scipy.special import ndtri, ndtr
@@ -31,11 +32,34 @@ def resample_nb(X, func, output_len=1, R=int(1e6), seed=0):
     N = X.shape[0]
     idxs_resampling = np.random.randint(low=0, high=N, size=R*N)
     data_resampled = X[idxs_resampling].reshape(R, N, X.shape[1])    
-    stat = func(X)
     
     boot_sample = np.empty((R, output_len))
     for i, r in enumerate(data_resampled):
         boot_sample[i] = func(r)
+    return boot_sample
+
+@njit
+def resample_block_nb(X, Y, func, output_len=1, R=int(1e5), seed=0):
+    """
+    X, Y:   ragged arrays or tuples. Each element is an array containing the data for a block. 
+    func:   numba function f: X,Y  ->  Z,   Z: 1D array of size output_len.
+    """
+    np.random.seed(seed)
+    def stack(arr_list):
+        return np.array([a for arr in arr_list for a in arr])
+    
+    n_x = [len(x) for x in X]
+    n_y = [len(y) for y in Y]
+    idxs_resampling_x = [np.random.randint(low=0, high=n, size=R*n) for n in n_x]
+    idxs_resampling_y = [np.random.randint(low=0, high=n, size=R*n) for n in n_y]
+    X_resampled = [x[idxs_resampling].reshape(R, n) for x, n, idxs_resampling in zip(X, n_x, idxs_resampling_x)]
+    Y_resampled = [y[idxs_resampling].reshape(R, n) for y, n, idxs_resampling in zip(Y, n_y, idxs_resampling_y)]
+    
+    boot_sample = np.empty((R, output_len))
+    for i in range(R):
+        Xi = stack([x[i] for x in X_resampled])
+        Yi = stack([y[i] for y in Y_resampled])
+        boot_sample[i] = func(Xi, Yi)
     return boot_sample
 
 def resample(X, func, output_len=1, R=int(1e4), seed=0):
@@ -43,13 +67,35 @@ def resample(X, func, output_len=1, R=int(1e4), seed=0):
     np.random.seed(seed)
     N = X.shape[0]
     idxs_resampling = np.random.randint(low=0, high=N, size=R*N)
-    data_resampled = X[idxs_resampling].reshape(R, N, X.shape[1])    
-    stat = func(X)
+    data_resampled = X[idxs_resampling].reshape(R, N, X.shape[1])
     
     boot_sample = np.empty((R, output_len))
     for i, r in enumerate(data_resampled):
         boot_sample[i] = func(r)
     return boot_sample
+
+
+def resample_block(X, Y, func, output_len=1, R=int(1e5), seed=0):
+    """
+    X, Y:   ragged arrays or tuples. Each element is an array containing the data for a block. 
+    func:   numba function f: X,Y  ->  Z,   Z: 1D array of size output_len.
+    """
+    np.random.seed(seed)
+    
+    n_x = [len(x) for x in X]
+    n_y = [len(y) for y in Y]
+    idxs_resampling_x = [np.random.randint(low=0, high=n, size=R*n) for n in n_x]
+    idxs_resampling_y = [np.random.randint(low=0, high=n, size=R*n) for n in n_y]
+    X_resampled = [x[idxs_resampling].reshape(R, n) for x, n, idxs_resampling in zip(X, n_x, idxs_resampling_x)]
+    Y_resampled = [y[idxs_resampling].reshape(R, n) for y, n, idxs_resampling in zip(Y, n_y, idxs_resampling_y)]
+    
+    boot_sample = np.empty((R, output_len))
+    for i in range(R):
+        Xi = np.hstack([x[i] for x in X_resampled])
+        Yi = np.hstack([y[i] for y in Y_resampled])
+        boot_sample[i] = func(Xi, Yi)
+    return boot_sample
+
     
 @njit
 def jackknife_resampling(data):
@@ -80,6 +126,13 @@ def jackknife_stat_nb(data, statistic):
     stats = np.array([statistic(r) for r in resamples])
     return stats
 
+def jackknife_stat_two_samples(data, data2, statistic):
+    jk_X = jackknife_resampling(data)
+    jk_Y = jackknife_resampling(data2)
+    jk_XY = [*product(jk_X, jk_Y)]
+    stats = np.array([statistic(*r) for r in jk_XY])
+    return stats
+
 def jackknife_stat_(data, statistic):
     resamples = jackknife_resampling(data)
     stats = np.array([statistic(r) for r in resamples])
@@ -97,7 +150,8 @@ def _percentile_of_score(a, score, axis, account_equal=False):
     else:
         return (a < score).sum(axis=axis) / B
     
-def CI_bca(data, statistic, alternative='two-sided', alpha=0.05, R=int(2e5), account_equal=False, use_numba=True, **kwargs):
+def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(2e5), account_equal=False, use_numba=True, **kwargs):
+    """If data2 is provided, assumes a block resampling and statistic takes two arguments."""
     if alternative == 'two-sided':
         probs = np.array([alpha/2, 1 - alpha/2])
     elif alternative == 'less':
@@ -106,11 +160,19 @@ def CI_bca(data, statistic, alternative='two-sided', alpha=0.05, R=int(2e5), acc
         probs = np.array([alpha, 1])
     else:
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
+    
+    if data2 is None:
+        resample_func = resample_nb if use_numba else resample
+        theta_hat_b = resample_func(data[:,None] if data.ndim == 1 else data,
+                                    statistic, R=R, **kwargs).squeeze()
+    else:
+        resample_func = resample_block_nb if use_numba else resample_block
+        theta_hat_b = resample_func(data, data2, statistic, R=R, **kwargs).squeeze()
+        data = np.hstack(data)
+        data2 = np.hstack(data2)
         
-    resample_func = resample_nb if use_numba else resample
-    theta_hat_b = resample_func(data[:,None] if data.ndim == 1 else data,
-                                statistic, R=R, **kwargs).squeeze()
-    alpha_bca = _bca_interval(data, statistic, probs, theta_hat_b, account_equal, use_numba)[0]
+    alpha_bca = _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba)[0]
+    
     if np.isnan(alpha_bca).all(): 
         warnings.warn('CI shows there is only one value. Check data.', RuntimeWarning)
         sample_stat = statistic(data)
@@ -122,16 +184,22 @@ def CI_bca(data, statistic, alternative='two-sided', alpha=0.05, R=int(2e5), acc
     elif alternative == 'greater':
         return np.array([np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0), np.inf])
     
-def _bca_interval(data, statistic, probs, theta_hat_b, account_equal, use_numba):
+def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba):
     """Bias-corrected and accelerated interval."""
     # calculate z0_hat
-    theta_hat = statistic(data)
+    if data2 is None:
+        theta_hat = statistic(data)
+    else:
+        theta_hat = statistic(data, data2)
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1, account_equal=account_equal)
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
-    jackknife_computer = jackknife_stat_nb if use_numba else jackknife_stat
-    theta_hat_jk = jackknife_computer(data, statistic)  # jackknife resample
+    if data2 is None:
+        jackknife_computer = jackknife_stat_nb if use_numba else jackknife_stat
+        theta_hat_jk = jackknife_computer(data, statistic)  # jackknife resample
+    else:
+        theta_hat_jk = jackknife_stat_two_samples(data, data2, statistic)
     n = theta_hat_jk.shape[0]
     theta_hat_jk_dot = theta_hat_jk.mean(axis=0) 
 

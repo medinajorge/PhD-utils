@@ -497,3 +497,43 @@ def permutation_test_2sample_paired_diffmedian(X1, X2, N=int(1e6)-1, alternative
                           )
     else:
         raise ValueError("alternative not valid")
+
+@njit
+def permutation_test_2sample_paired_ratio_median(X1, X2, N=int(1e6)-1, alternative="two-sided", tolerance=1.5e-8, seed=0):
+    """
+    Paired permutation test for the median ratio.
+    
+    Attrs:
+            alternative: 
+                                           - greater:    H0: me_1 / me_2 < observed,       H1: me_1 / me_2  >= observed  
+                                           - less:       H0: me_1 / me_2 > observed,       H1: me_1 / me_2  <= observed  
+                                           - two-sided:  H0: me_1 / me_2 = observed,       H1: me_1 / me_2  != observed 
+            
+    Returns: p-value
+    """
+    def aux(X_paired):
+            return np.median(X_paired[0] / X_paired[1])
+        
+    n = X1.size
+    X_paired = np.vstack((X1, X2))
+    stat_0 = aux(X_paired)
+    
+    perm_sample = np.empty((N))
+    np.random.seed(seed)
+    for i in range(N):
+        shuffle = np.random.randint(0, 2, size=n) == 1
+        X_shifted = X_paired[:, shuffle][::-1]
+        X_still = X_paired[:, ~shuffle]
+        X_perm = np.hstack((X_shifted, X_still))
+        perm_sample[i] = aux(X_perm)
+    
+    if alternative == "greater":
+        return (1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1)
+    elif alternative == "less":
+        return (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+    elif alternative == "two-sided":
+        return 2 * np.fmin((1 + (perm_sample >= stat_0 - tolerance).sum()) / (N + 1),
+                           (1 + (perm_sample <= stat_0 + tolerance).sum()) / (N + 1)
+                          )
+    else:
+        raise ValueError("alternative not valid")
