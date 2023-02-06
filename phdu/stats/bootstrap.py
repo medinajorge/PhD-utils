@@ -186,7 +186,10 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
     
     if np.isnan(alpha_bca).all(): 
         warnings.warn('CI shows there is only one value. Check data.', RuntimeWarning)
-        sample_stat = statistic(data)
+        if data2 is None:
+            sample_stat = statistic(data)
+        else:
+            sample_stat = statistic(data, data2)
         return np.array([sample_stat, sample_stat])
     elif alternative == 'two-sided':
         return  np.percentile(theta_hat_b, alpha_bca*100, axis=0)
