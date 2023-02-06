@@ -164,8 +164,8 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
     if data2 is None:
         N = data.shape[0]
         if N < n_min:
-            warnings.warn(f"N={N} < n_min={n_min}. Avoiding computation (returning np.NaN) ...")
-            return np.NaN
+            warnings.warn(f"N={N} < n_min={n_min}. Avoiding computation (returning NaNs) ...")
+            return np.array([np.NaN, np.NaN])
         else:
             resample_func = resample_nb if use_numba else resample
             theta_hat_b = resample_func(data[:,None] if data.ndim == 1 else data,
@@ -174,8 +174,8 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
         total_N = lambda data: np.sum([d.shape[0] for d in data])
         N = min([total_N(data), total_N(data2)])
         if N < n_min:
-            warnings.warn(f"N={N} < n_min={n_min}. Avoiding computation (returning np.NaN) ...")
-            return np.NaN
+            warnings.warn(f"N={N} < n_min={n_min}. Avoiding computation (returning NaNs) ...")
+            return np.array([np.NaN, np.NaN])
         else:
             resample_func = resample_block_nb if use_numba else resample_block
             theta_hat_b = resample_func(data, data2, statistic, R=R, **kwargs).squeeze()
