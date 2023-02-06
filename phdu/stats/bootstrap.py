@@ -150,7 +150,7 @@ def _percentile_of_score(a, score, axis, account_equal=False):
     else:
         return (a < score).sum(axis=axis) / B
     
-def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(2e5), account_equal=False, use_numba=True, **kwargs):
+def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(2e5), account_equal=False, use_numba=True, n_min=5, **kwargs):
     """If data2 is provided, assumes a block resampling and statistic takes two arguments."""
     if alternative == 'two-sided':
         probs = np.array([alpha/2, 1 - alpha/2])
@@ -162,14 +162,25 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
     
     if data2 is None:
-        resample_func = resample_nb if use_numba else resample
-        theta_hat_b = resample_func(data[:,None] if data.ndim == 1 else data,
-                                    statistic, R=R, **kwargs).squeeze()
+        N = data.shape[0]
+        if N < n_min:
+            warnings.warn(f"N={N} < n_min={n_min}. Avoiding computation (returning np.NaN) ...")
+            return np.NaN
+        else:
+            resample_func = resample_nb if use_numba else resample
+            theta_hat_b = resample_func(data[:,None] if data.ndim == 1 else data,
+                                        statistic, R=R, **kwargs).squeeze()
     else:
-        resample_func = resample_block_nb if use_numba else resample_block
-        theta_hat_b = resample_func(data, data2, statistic, R=R, **kwargs).squeeze()
-        data = np.hstack(data)
-        data2 = np.hstack(data2)
+        total_N = lambda data: np.sum([d.shape[0] for d in data])
+        N = min([total_N(data), total_N(data2)])
+        if N < n_min:
+            warnings.warn(f"N={N} < n_min={n_min}. Avoiding computation (returning np.NaN) ...")
+            return np.NaN
+        else:
+            resample_func = resample_block_nb if use_numba else resample_block
+            theta_hat_b = resample_func(data, data2, statistic, R=R, **kwargs).squeeze()
+            data = np.hstack(data)
+            data2 = np.hstack(data2)
         
     alpha_bca = _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba)[0]
     
