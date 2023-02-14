@@ -24,7 +24,7 @@ def coverage(*args, num_N=20, **kwargs):
 def CI_specs(CIs, z, stat, coverage_iters=int(1e4)):
     CI_arr = CIs.values
     coverages = np.vstack([coverage(CI, z, stat, num_iters=coverage_iters)[1] for CI in CI_arr]).T
-    coverages_avg = coverages[:-3].mean(axis=0)
+    coverages_avg = coverages[-3:].mean(axis=0)
     coverages_last = coverages[-1]
     spread = np.hstack([np.diff(CI) for CI in CI_arr])
     CIs2 = CIs.copy()
