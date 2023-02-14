@@ -275,7 +275,7 @@ def vs_transform(data, bootstrap_estimates, se_bootstrap, precision=1e-3, frac=2
     Variance-stabilizing transformation.
     """
     n_stats = bootstrap_estimates.shape[1]
-    g = np.empty((max(data.shape[0], 100), n_stats))
+    g = np.empty((data.shape[0], n_stats))
     lowess_linear_interp = []
     for i, (b, se, d) in enumerate(zip(bootstrap_estimates.T,  se_bootstrap.T, data.T)):
         x, y = lowess(se, b, frac=frac).T
@@ -283,17 +283,22 @@ def vs_transform(data, bootstrap_estimates, se_bootstrap, precision=1e-3, frac=2
         z_min = d.min()
         for k, z in enumerate(d):
             g[k, i] = simpson3oct_vec(vs_integrand, z_min, z, precision, f_linear)[0]
-        if d.size < 100: # extra sampling for the inversion
-            z_std = d.std()
-            n = d.size
-            for k, z in enumerate(np.linspace(z_min - z_std, d.max() + z_std, 100 - n, endpoint=True), start=n):
-                g[k, i] = simpson3oct_vec(vs_integrand, z_min, z, precision, f_linear)[0]
         lowess_linear_interp.append(f_linear)
     return g, lowess_linear_interp
 
-def invert_CI(CI, z, g, frac=1/10):
+def invert_CI(CI, z, g, lowess_linear_interp, frac=1/10, min_n=100):
     CIs = np.empty(CI.shape)
-    for k, (ci, zi, gi) in enumerate(zip(CI, z.T, g.T)):
+    for k, (ci, zi, gi, f_linear) in enumerate(zip(CI, z.T, g.T, lowess_linear_interp)):
+        n = zi.size
+        if n < min_n:
+            z_std = zi.std()
+            z_min = zi.min()
+            extra_z = np.unique(np.linspace(z_min - z_std, zi.max() + z_std, min_n - n))
+            extra_g = np.empty((extra_z.size))
+            for k, extra_zi in enumerate(extra_z):
+                extra_g[k] = simpson3oct_vec(vs_integrand, z_min, extra_zi, precision, f_linear)[0]
+            zi = np.hstack((zi, extra_z))
+            gi = np.hstack((gi, extra_g))
         g_l, z_l = lowess(zi, gi, frac=frac).T
         f_inv = interp1d(np.unique(g_l), y=np.unique(z_l), bounds_error=False, kind='linear', fill_value='extrapolate')
         g_grid = np.linspace(gi.min(), gi.max(), 1000)
@@ -381,9 +386,9 @@ def CI_studentized(data, stat, R=int(1e5), alpha=0.05, smooth=False, vs=False, f
                    integration_precision=1e-4, **kwargs):
     base, results, studentized_results, se_bootstrap = _bootstrap_studentized_resampling(data, stat, smooth=smooth, R=R, studentized_reps=studentized_reps, **kwargs)
     if vs:
-        g, lowess_flinear = vs_transform(data, results, se_bootstrap, precision=integration_precision, frac=frac_g)
+        g, lowess_linear_interp = vs_transform(data, results, se_bootstrap, precision=integration_precision, frac=frac_g)
         base_g, results_g, studentized_results_g, _ = _bootstrap_studentized_resampling(g, stat, R=R, divide_by_se=False, smooth=False)
-        CI = invert_CI(compute_CI_studentized(base_g, results_g, studentized_results_g), data, g, frac=frac_invert)
+        CI = invert_CI(compute_CI_studentized(base_g, results_g, studentized_results_g), data, g, lowess_linear_interp, frac=frac_invert)
     else:
         CI = compute_CI_studentized(base, results, studentized_results)
     return CI
