@@ -270,7 +270,7 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
         alpha_bca = np.clip(alpha_bca, 0, 1)
     return alpha_bca, a_hat  # return a_hat for testing
 
-def vs_transform(data, bootstrap_estimates, se_bootstrap, precision=1e-4, frac=2/3):
+def vs_transform(data, bootstrap_estimates, se_bootstrap, precision=1e-3, frac=2/3):
     """
     Variance-stabilizing transformation.
     """
@@ -352,7 +352,7 @@ def _bootstrap_studentized_resampling(data, stat, alpha=0.05, R=10000, studentiz
             t_result = err /std_err
             return t_result, std_err
     else:
-        def get_studentized(data_r, result):
+        def get_studentized(data_r, result, seed):
             return result - base, np.NaN
     
     data_r = resample_nb_X(data, R=R, seed=seed, smooth=smooth)
@@ -372,10 +372,11 @@ def _bootstrap_studentized_resampling(data, stat, alpha=0.05, R=10000, studentiz
             se_bootstrap[i] = se
     return base, results, studentized_results, se_bootstrap
 
-def CI_studentized(data, stat, R=int(1e5), alpha=0.05, smooth=False, vs=False, frac_g=2/3, frac_invert=1/10, studentized_reps=100, **kwargs):
+def CI_studentized(data, stat, R=int(1e5), alpha=0.05, smooth=False, vs=False, frac_g=2/3, frac_invert=1/10, studentized_reps=100, 
+                   integration_precision=1e-3, **kwargs):
     base, results, studentized_results, se_bootstrap = _bootstrap_studentized_resampling(data, stat, smooth=smooth, R=R, studentized_reps=studentized_reps, **kwargs)
     if vs:
-        g, lowess_flinear = vs_transform(data, results, se_bootstrap, frac=frac_g)
+        g, lowess_flinear = vs_transform(data, results, se_bootstrap, precision=integration_precision, frac=frac_g)
         base_g, results_g, studentized_results_g, _ = _bootstrap_studentized_resampling(g, stat, R=R, divide_by_se=False, smooth=False)
         CI = invert_CI(compute_CI_studentized(base_g, results_g, studentized_results_g), data, g, frac=frac_invert)
     else:
