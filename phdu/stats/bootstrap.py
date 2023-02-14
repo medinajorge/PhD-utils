@@ -286,7 +286,7 @@ def vs_transform(data, bootstrap_estimates, se_bootstrap, precision=1e-3, frac=2
         lowess_linear_interp.append(f_linear)
     return g, lowess_linear_interp
 
-def invert_CI(CI, z, g, lowess_linear_interp, frac=1/10, min_n=100):
+def invert_CI(CI, z, g, lowess_linear_interp, frac=1/10, min_n=100, integration_precision=1e-4):
     CIs = np.empty(CI.shape)
     for k, (ci, zi, gi, f_linear) in enumerate(zip(CI, z.T, g.T, lowess_linear_interp)):
         n = zi.size
@@ -296,7 +296,7 @@ def invert_CI(CI, z, g, lowess_linear_interp, frac=1/10, min_n=100):
             extra_z = np.unique(np.linspace(z_min - z_std, zi.max() + z_std, min_n - n))
             extra_g = np.empty((extra_z.size))
             for k, extra_zi in enumerate(extra_z):
-                extra_g[k] = simpson3oct_vec(vs_integrand, z_min, extra_zi, precision, f_linear)[0]
+                extra_g[k] = simpson3oct_vec(vs_integrand, z_min, extra_zi, integration_precision, f_linear)[0]
             zi = np.hstack((zi, extra_z))
             gi = np.hstack((gi, extra_g))
         g_l, z_l = lowess(zi, gi, frac=frac).T
@@ -388,7 +388,8 @@ def CI_studentized(data, stat, R=int(1e5), alpha=0.05, smooth=False, vs=False, f
     if vs:
         g, lowess_linear_interp = vs_transform(data, results, se_bootstrap, precision=integration_precision, frac=frac_g)
         base_g, results_g, studentized_results_g, _ = _bootstrap_studentized_resampling(g, stat, R=R, divide_by_se=False, smooth=False)
-        CI = invert_CI(compute_CI_studentized(base_g, results_g, studentized_results_g), data, g, lowess_linear_interp, frac=frac_invert)
+        CI = invert_CI(compute_CI_studentized(base_g, results_g, studentized_results_g), 
+                       data, g, lowess_linear_interp, frac=frac_invert, integration_precision=integration_precision)
     else:
         CI = compute_CI_studentized(base, results, studentized_results)
     return CI
