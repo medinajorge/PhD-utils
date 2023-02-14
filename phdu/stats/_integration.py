@@ -1,19 +1,25 @@
 import numpy as np
 from numba import njit
 
-def simpson3oct_vec(f, a, b, pre, *args):
+def simpson3oct_vec(f, a, b, pre, relative=True, *args):
     """
     Simpson 3 octaves method.
     Attrs:
-        - f:   integrand
-        - a:   lower end of integration
-        - b:   upper end of integration
-        - pre: precision
+        - f:          integrand
+        - a:          lower end of integration
+        - b:          upper end of integration
+        - pre:        precision
+        - relative:   precision w.r.t. the order of magnitude of the integration
+                      (False: absolute precision)
     """
     num = 3
     In = 0.
     In1 = 100.
-    while abs(In - In1) > pre:
+    if relative:
+        condition = lambda In, In1: abs((In-In1) / In1) > pre
+    else:
+        condition = lambda In, In1: abs(In - In1) > pre
+    while condition(In, In1):
         xgrid = np.linspace(a, b, num+1)
         ygrid = f(xgrid, *args)
         if np.isnan(ygrid).all(): #restart

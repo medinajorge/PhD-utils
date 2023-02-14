@@ -270,7 +270,7 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
         alpha_bca = np.clip(alpha_bca, 0, 1)
     return alpha_bca, a_hat  # return a_hat for testing
 
-def vs_transform(data, bootstrap_estimates, se_bootstrap, precision=1e-3, frac=2/3):
+def vs_transform(data, bootstrap_estimates, se_bootstrap, precision=1e-4, frac=2/3):
     """
     Variance-stabilizing transformation.
     """
