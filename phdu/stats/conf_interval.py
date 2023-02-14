@@ -32,9 +32,9 @@ def CI_specs(CIs, z, stat):
     CIs2['coverage-3-avg'] = coverages_avg
     return CIs2
 
-def find_best(CIs, z=None, stat=None, alpha=0.05):
-    alpha_expanded_last = alpha + 0.01
-    alpha_expanded_avg = alpha + 0.02
+def find_best(CIs, z=None, stat=None, alpha=0.05, alpha_margin_last=0.01, alpha_margin_avg=0.02):
+    alpha_expanded_last = alpha + alpha_margin_last
+    alpha_expanded_avg = alpha + alpha_margin_avg
     if 'coverage-last' in CIs.columns:
         coverages_last, coverages_avg, spread = CIs[['coverage-last', 'coverage-3-avg', 'width']].values.T
     else:
