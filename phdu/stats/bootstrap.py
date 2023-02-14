@@ -10,6 +10,9 @@ try:
 except:
     warnings.warn('scipy not available. Numba BCa bootstrap will not work.', RuntimeWarning)
     
+from ..np_utils import numpy_fill 
+from ._integration import simpson3oct_vec
+    
 @njit
 def resample_paired_nb(X, Y, func, output_len=1, R=int(1e6), seed=0):
     np.random.seed(seed)
@@ -26,12 +29,30 @@ def resample_paired_nb(X, Y, func, output_len=1, R=int(1e6), seed=0):
     return boot_sample
 
 @njit
-def resample_nb(X, func, output_len=1, R=int(1e6), seed=0):
+def resample_nb_X(X, R=int(1e5), seed=0, smooth=False):
     """X: array of shape (N_samples, n_vars)."""
     np.random.seed(seed)
     N = X.shape[0]
     idxs_resampling = np.random.randint(low=0, high=N, size=R*N)
-    data_resampled = X[idxs_resampling].reshape(R, N, X.shape[1])    
+    data_resampled = X[idxs_resampling].reshape(R, N, X.shape[1])
+    if smooth:
+        def x_in_percentile(x):
+            low, high  = np.percentile(x, [5, 95])
+            z = x[(x>low) & (x<high)]
+            return z
+        def std_percentile(x):
+            z = x_in_percentile(x)
+            return z.std() / np.sqrt(z.size)
+        h = np.array([std_percentile(x) for x in X.T])
+        n_trimmed = x_in_percentile(X.T[0]).size
+        for k, h_k in enumerate(h):
+            data_resampled[:,:,k] += h_k * np.random.standard_t(n_trimmed, R*N)
+    return data_resampled
+
+@njit
+def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False):
+    """X: array of shape (N_samples, n_vars)."""
+    data_resampled = resample_nb_X(X, R=R, seed=seed, smooth=smooth)
     
     boot_sample = np.empty((R, output_len))
     for i, r in enumerate(data_resampled):
@@ -232,3 +253,132 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
         warnings.warn('percentiles must be in [0, 1]. bca percentiles: {}\nForcing percentiles in [0,1]...'.format(alpha_bca), RuntimeWarning)
         alpha_bca = np.clip(alpha_bca, 0, 1)
     return alpha_bca, a_hat  # return a_hat for testing
+
+def vs_transform(data, bootstrap_estimates, se_bootstrap, precision=1e-3, frac=2/3):
+    """
+    Variance-stabilizing transformation.
+    """
+    n_stats = bootstrap_estimates.shape[1]
+    g = np.empty((data.shape[0], n_stats))
+    lowess_linear_interp = []
+    for i, (b, se, d) in enumerate(zip(bootstrap_estimates.T,  se_bootstrap.T, data.T)):
+        x, y = lowess(se, b, frac=frac).T
+        f_linear = interp1d(x, y=y, bounds_error=False, kind='linear', fill_value='extrapolate')
+        z_min = d.min()
+        for k, z in enumerate(tqdm(d)):
+            g[k, i] = simpson3oct_vec(vs_integrand, z_min, z, precision, f_linear)[0]
+        lowess_linear_interp.append(f_linear)
+    return g, lowess_linear_interp
+
+def invert_CI(CI, z, g, frac=1/10):
+    CIs = np.empty(CI.shape)
+    for k, (ci, zi, gi) in enumerate(zip(CI, z.T, g.T)):
+        g_l, z_l = lowess(zi, gi, frac=frac).T
+        f_inv = interp1d(g_l, y=z_l, bounds_error=False, kind='linear', fill_value='extrapolate')
+        g_grid = np.linspace(gi.min(), gi.max(), 1000)
+        CI_inv = np.empty((2))
+        for i, bound in enumerate(ci):
+            closest = (np.abs(bound - g_grid)).argmin()
+            CI_inv[i] = f_inv(g_grid[closest])
+        CIs[k] = CI_inv
+    return CIs
+
+def compute_CI_studentized(base, results, studentized_results, alpha=0.05):
+    R, output_len = results.shape
+    bootstrap_estimate = results.mean(axis=0)
+    errors = results - bootstrap_estimate
+    std_err = np.asarray(np.sqrt(np.diag(errors.T.dot(errors) / R)))
+    percentiles = 100 * np.array([[alpha, 1.0 - alpha]] * output_len)
+    lower = np.empty((output_len))
+    upper = np.empty((output_len))
+    for i in range(output_len):
+        lower[i], upper[i] = np.percentile(studentized_results[:, i], percentiles[i])
+    # Basic and studentized use the lower empirical quantile to compute upper and vice versa.  
+    
+    lower_copy = lower + 0.0
+    lower = base - upper * std_err
+    upper = base - lower_copy * std_err
+    CI = np.vstack((lower, upper)).T
+    return CI
+
+def vs_integrand(x, f_linear):
+    """Integrand of the variance-stabilizing transformation."""
+    clipped_f = np.clip(f_linear(x), 1e-8, None)
+    if np.isnan(clipped_f).any():
+        #import pdb; pdb.set_trace()
+        clipped_f = numpy_fill(clipped_f)
+    return 1 / clipped_f
+
+def cov(results, base=None, recenter=False):
+    """
+    reps : Number of bootstrap replications
+    recenter : Whether to center the bootstrap variance estimator on the average of the bootstrap samples (True), or 
+                       to center on the original sample estimate (False).
+    """
+    if recenter:
+        errors = results - np.mean(results, 0)
+    else:
+        assert base is not None
+        errors = results - base
+    return errors.T.dot(errors) / results.shape[0]
+
+def _bootstrap_studentized_resampling(data, stat, alpha=0.05, R=10000, studentized_reps=100, recenter=False, se_func=None, seed=0, divide_by_se=True, smooth=False):
+    base = np.asarray(stat(data))
+    output_len = base.size
+    studentized_results = np.empty((R, output_len))
+    results = np.empty((R, output_len))
+    se_bootstrap = np.empty((R, output_len))
+    n = data.shape[0]
+    if divide_by_se:
+        def get_studentized(data_r, result):
+            nested_resampling = resample_nb(data_r, stat, R=studentized_reps, output_len=output_len, seed=seed, smooth=smooth)        
+            std_err = np.sqrt(np.diag(cov(nested_resampling, result, recenter=recenter)))
+            err = result - base
+            t_result = err /std_err
+            return t_result, std_err
+    else:
+        def get_studentized(data_r, result):
+            return result - base, np.NaN
+    
+    data_r = resample_nb_X(data, R=R, seed=seed, smooth=smooth)
+    if se_func is None:
+        for i, d_r in enumerate(data_r):
+            result = stat(d_r)
+            t_result, std_err = get_studentized(d_r, result)
+            results[i] = result
+            studentized_results[i] = t_result # t = (x^ - x) / s
+            se_bootstrap[i] = std_err
+    else:
+        for i, d_r in enumerate(data_r):
+            result = stat(d_r)
+            se = se_func(d_r)
+            results[i] = result
+            studentized_results[i] = (result - base) / se
+            se_bootstrap[i] = se
+    return base, results, studentized_results, se_bootstrap
+
+def CI_studentized(data, stat, R=int(1e5), alpha=0.05, smooth=False, vs=False, frac_g=2/3, frac_invert=1/10, studentized_reps=100, **kwargs):
+    base, results, studentized_results, se_bootstrap = _bootstrap_studentized_resampling(data, stat, smooth=smooth, R=R, studentized_reps=studentized_reps, **kwargs)
+    if vs:
+        g, lowess_flinear = vs_transform(data, results, se_bootstrap, frac=frac_g)
+        base_g, results_g, studentized_results_g, _ = _bootstrap_studentized_resampling(g, stat, R=R, divide_by_se=False, smooth=False)
+        CI = invert_CI(compute_CI_studentized(base_g, results_g, studentized_results_g), data, g, frac=frac_invert)
+    else:
+        CI = compute_CI_studentized(base, results, studentized_results)
+    return CI
+
+def CI_percentile(data, stat, R=int(1e5), alpha=0.05, smooth=False, **kwargs):
+    sample_stat = stat(data)
+    if hasattr(sample_stat, "__len__"):
+        output_len = len(sample_stat)
+    else:
+        output_len = 1
+    boot_sample = resample_nb(data, stat, R=R, smooth=smooth, output_len=output_len, **kwargs)
+    alpha_ptg = alpha*100
+    results = pd.Series(dict(stat=stat.__name__,
+                         sample_stat=sample_stat,
+                         lower_bound=np.percentile(boot_sample, alpha_ptg, axis=0),
+                         upper_bound=np.percentile(boot_sample, 100-alpha_ptg, axis=0),
+                         CI=np.percentile(boot_sample, [alpha_ptg/2, 100 - alpha_ptg/2], axis=0),
+                     ))
+    return results

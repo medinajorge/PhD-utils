@@ -34,6 +34,19 @@ def idxs_condition(x, condition):
     else:
         return changes
     
+def numpy_fill(arr):
+    '''Fills nan with previous not-NaN values'''
+    mask = np.isnan(arr)
+    if mask.all():
+        return np.NaN
+    else:
+        idx = np.where(~mask, np.arange(mask.shape[0]), 0)
+        np.maximum.accumulate(idx,axis=0, out=idx)
+        out = arr[np.arange(idx.shape[0])[idx]]
+        if idx[0] == 0:
+            out[:(idx == 0).sum()] = arr[idx[idx > 0][0]]
+        return out
+    
 def percentile_boot_paired(X, Y, func, alpha=0.05, R=int(1e4), seed=0, names=None):
     """"
     Bootstrap a statistic that takes X, Y as input. 
