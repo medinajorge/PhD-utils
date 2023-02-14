@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit
 
-def simpson3oct_vec(f, a, b, pre, relative=True, *args):
+def simpson3oct_vec(f, a, b, pre, *args, relative=True):
     """
     Simpson 3 octaves method.
     Attrs:
