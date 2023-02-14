@@ -10,7 +10,15 @@ try:
     from scipy.special import ndtri, ndtr
 except:
     warnings.warn('scipy not available. Numba BCa bootstrap will not work.', RuntimeWarning)
-    
+try:
+    shell = get_ipython().__class__.__name__
+    if shell == 'ZMQInteractiveShell': # script being run in Jupyter notebook
+        from tqdm.notebook import tqdm
+    elif shell == 'TerminalInteractiveShell': #script being run in iPython terminal
+        from tqdm import tqdm
+except NameError:
+    from tqdm import tqdm # Probably runing on standard python terminal.
+
 from ..np_utils import numpy_fill 
 from ._integration import simpson3oct_vec
 from .conf_interval import CI_specs
