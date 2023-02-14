@@ -404,9 +404,10 @@ def CI_all(data, stat, R=int(1e5), alpha=0.05):
     specs = dict(percentile = (CI_percentile, {}),
                  percentile_smooth = (CI_percentile, dict(smooth=True)),
                  bca = (CI_bca, {}),
+                 bca_smooth = (CI_bca, dict(smooth=True)),
                  studentized = (CI_studentized, {}),
                  studentized_smooth = (CI_studentized, dict(smooth=True)),
-                 studentized_vs = (CI_studentized, dict(vs = True)),
+                 studentized_vs = (CI_studentized, dict(vs=True)),
                  studentized_vs_smooth = (CI_studentized, dict(vs=True, smooth=True))
                 )
     CIs = defaultdict(list)
