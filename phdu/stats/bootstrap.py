@@ -345,8 +345,8 @@ def _bootstrap_studentized_resampling(data, stat, alpha=0.05, R=10000, studentiz
     se_bootstrap = np.empty((R, output_len))
     n = data.shape[0]
     if divide_by_se:
-        def get_studentized(data_r, result):
-            nested_resampling = resample_nb(data_r, stat, R=studentized_reps, output_len=output_len, seed=seed, smooth=smooth)        
+        def get_studentized(data_r, result, seed):
+            nested_resampling = resample_nb(data_r, stat, R=studentized_reps, output_len=output_len, seed=seed, smooth=False)        
             std_err = np.sqrt(np.diag(cov(nested_resampling, result, recenter=recenter)))
             err = result - base
             t_result = err /std_err
@@ -359,7 +359,7 @@ def _bootstrap_studentized_resampling(data, stat, alpha=0.05, R=10000, studentiz
     if se_func is None:
         for i, d_r in enumerate(data_r):
             result = stat(d_r)
-            t_result, std_err = get_studentized(d_r, result)
+            t_result, std_err = get_studentized(d_r, result, i)
             results[i] = result
             studentized_results[i] = t_result # t = (x^ - x) / s
             se_bootstrap[i] = std_err
