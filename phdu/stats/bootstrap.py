@@ -27,7 +27,7 @@ except NameError:
 
 from ..np_utils import numpy_fill 
 from ._integration import simpson3oct_vec
-from .conf_interval import CI_specs
+from . import conf_interval
     
 @njit
 def resample_paired_nb(X, Y, func, output_len=1, R=int(1e6), seed=0):
@@ -421,4 +421,4 @@ def CI_all(data, stat, R=int(1e5), alpha=0.05):
         else:
             CIs['low'].append(CI[:, 0])
             CIs['high'].append(CI[:, 1])
-    return CI_specs(pd.DataFrame(CIs).set_index('CI'), data, stat)
+    return conf_interval.CI_specs(pd.DataFrame(CIs).set_index('CI'), data, stat)

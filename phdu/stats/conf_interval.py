@@ -1,7 +1,7 @@
 from numba import njit
 import numpy as np
 import pandas as pd
-from .bootstrap import resample_nb
+from . import bootstrap
 try:
     import statsmodels.stats.api as sms
 except:
@@ -13,7 +13,7 @@ def t_interval(x, alpha=0.05, alternative="two-sided"):
 @njit
 def compute_coverage(CI, data, stat, N, seed=0, num_iters=1000):
     low, high = CI
-    estimates = resample_nb(data, stat, R=num_iters, N=N, seed=seed)[:, 0]
+    estimates = bootstrap.resample_nb(data, stat, R=num_iters, N=N, seed=seed)[:, 0]
     return ((estimates > low) & (estimates < high)).mean()
 
 def coverage(*args, num_N=20, **kwargs):
