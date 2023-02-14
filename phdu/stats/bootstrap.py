@@ -4,6 +4,7 @@ Numba version of bias-corrected and accelerated (BCa) bootstrap.
 import numpy as np
 from numba import njit, boolean
 from itertools import product
+from collections import defaultdict
 import warnings
 try:
     from scipy.special import ndtri, ndtr
