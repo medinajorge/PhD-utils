@@ -321,7 +321,6 @@ def vs_integrand(x, f_linear):
     """Integrand of the variance-stabilizing transformation."""
     clipped_f = np.clip(f_linear(x), 1e-8, None)
     if np.isnan(clipped_f).any():
-        #import pdb; pdb.set_trace()
         clipped_f = numpy_fill(clipped_f)
     return 1 / clipped_f
 

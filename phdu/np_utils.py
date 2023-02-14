@@ -43,7 +43,7 @@ def numpy_fill(arr):
         idx = np.where(~mask, np.arange(mask.shape[0]), 0)
         np.maximum.accumulate(idx,axis=0, out=idx)
         out = arr[np.arange(idx.shape[0])[idx]]
-        if idx[0] == 0:
+        if mask[0] and idx[0] == 0:
             out[:(idx == 0).sum()] = arr[idx[idx > 0][0]]
         return out
     
