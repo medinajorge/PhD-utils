@@ -11,6 +11,11 @@ try:
 except:
     warnings.warn('scipy not available. Numba BCa bootstrap will not work.', RuntimeWarning)
 try:
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    from scipy.interpolate import interp1d # for interpolation of new data points
+except:
+    warnings.warn('scipy or statsmodels not available. Studentized bootstrap will not work.', RuntimeWarning)
+try:
     shell = get_ipython().__class__.__name__
     if shell == 'ZMQInteractiveShell': # script being run in Jupyter notebook
         from tqdm.notebook import tqdm
