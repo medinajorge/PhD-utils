@@ -11,12 +11,8 @@ def t_interval(x, alpha=0.05, alternative="two-sided"):
 
 @njit
 def compute_coverage(CI, data, stat, N, seed=0, num_iters=1000):
-    np.random.seed(0)
     low, high = CI
-    estimates = np.empty((num_iters))
-    for i in range(num_iters):
-        x_r = np.random.choice(data, size=N, replace=True)
-        estimates[i] = stat(x_r)
+    estimates = resample_nb(data, stat, R=num_iters, N=N, seed=seed)[:, 0]
     return ((estimates > low) & (estimates < high)).mean()
 
 def coverage(*args, num_N=20, **kwargs):
@@ -24,10 +20,31 @@ def coverage(*args, num_N=20, **kwargs):
     C = np.array([compute_coverage(*args, N=N, **kwargs) for N in Ns])
     return Ns, C
 
-def find_best(CIs, z, stat, alpha=0.06):
+def CI_specs(CIs, z, stat):
     CI_arr = CIs.values
-    coverages = np.vstack([coverage(CI, z, stat)[1] for CI in CI_arr]).T[:-3].mean(axis=0)
+    coverages = np.vstack([coverage(CI, z, stat)[1] for CI in CI_arr]).T
+    coverages_avg = coverages[:-3].mean(axis=0)
+    coverages_last = coverages[-1]
     spread = np.hstack([np.diff(CI) for CI in CI_arr])
-    valid = np.unique(np.hstack([np.where(coverages >= (1-alpha))[0], np.abs(coverages - (1-alpha)).argmin()]))
+    CIs2 = CIs.copy()
+    CIs2['width'] = spread
+    CIs2['coverage-last'] = coverages_last
+    CIs2['coverage-3-avg'] = coverages_avg
+    return CIs2
+
+def find_best(CIs, z=None, stat=None, alpha=0.05):
+    alpha_expanded_last = alpha + 0.01
+    alpha_expanded_avg = alpha + 0.02
+    if 'coverage-last' in CIs.columns:
+        coverages_last, coverages_avg, spread = CIs[['coverage-last', 'coverage-3-avg', 'width']].values.T
+    else:
+        CI_arr = CIs.values
+        coverages = np.vstack([coverage(CI, z, stat)[1] for CI in CI_arr]).T
+        coverages_avg = coverages[:-3].mean(axis=0)
+        coverages_last = coverages[-1]
+        spread = np.hstack([np.diff(CI) for CI in CI_arr])
+    valid = np.unique(np.hstack([np.where(coverages_last >= (1-alpha_expanded_last))[0],
+                                 np.where(coverages_avg >= (1-alpha_expanded_avg))[0],
+                                 np.abs(coverages_last - (1-alpha)).argmin()]))
     min_spread = spread[valid].argmin()
     return CIs.iloc[valid].iloc[min_spread]

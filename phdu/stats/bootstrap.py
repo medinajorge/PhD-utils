@@ -12,6 +12,7 @@ except:
     
 from ..np_utils import numpy_fill 
 from ._integration import simpson3oct_vec
+from .conf_interval import CI_specs
     
 @njit
 def resample_paired_nb(X, Y, func, output_len=1, R=int(1e6), seed=0):
@@ -29,10 +30,10 @@ def resample_paired_nb(X, Y, func, output_len=1, R=int(1e6), seed=0):
     return boot_sample
 
 @njit
-def resample_nb_X(X, R=int(1e5), seed=0, smooth=False):
+def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=int(1e12)):
     """X: array of shape (N_samples, n_vars)."""
     np.random.seed(seed)
-    N = X.shape[0]
+    N = min(X.shape[0], N)
     idxs_resampling = np.random.randint(low=0, high=N, size=R*N)
     data_resampled = X[idxs_resampling].reshape(R, N, X.shape[1])
     if smooth:
@@ -50,9 +51,9 @@ def resample_nb_X(X, R=int(1e5), seed=0, smooth=False):
     return data_resampled
 
 @njit
-def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False):
+def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=int(1e12)):
     """X: array of shape (N_samples, n_vars)."""
-    data_resampled = resample_nb_X(X, R=R, seed=seed, smooth=smooth)
+    data_resampled = resample_nb_X(X, R=R, seed=seed, smooth=smooth, N=N)
     
     boot_sample = np.empty((R, output_len))
     for i, r in enumerate(data_resampled):
@@ -367,7 +368,7 @@ def CI_studentized(data, stat, R=int(1e5), alpha=0.05, smooth=False, vs=False, f
         CI = compute_CI_studentized(base, results, studentized_results)
     return CI
 
-def CI_percentile(data, stat, R=int(1e5), alpha=0.05, smooth=False, **kwargs):
+def CI_percentile(data, stat, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', **kwargs):
     sample_stat = stat(data)
     if hasattr(sample_stat, "__len__"):
         output_len = len(sample_stat)
@@ -375,10 +376,34 @@ def CI_percentile(data, stat, R=int(1e5), alpha=0.05, smooth=False, **kwargs):
         output_len = 1
     boot_sample = resample_nb(data, stat, R=R, smooth=smooth, output_len=output_len, **kwargs)
     alpha_ptg = alpha*100
-    results = pd.Series(dict(stat=stat.__name__,
-                         sample_stat=sample_stat,
-                         lower_bound=np.percentile(boot_sample, alpha_ptg, axis=0),
-                         upper_bound=np.percentile(boot_sample, 100-alpha_ptg, axis=0),
-                         CI=np.percentile(boot_sample, [alpha_ptg/2, 100 - alpha_ptg/2], axis=0),
-                     ))
-    return results
+    if alternative == 'two-sided':
+        CI = np.percentile(boot_sample, [alpha_ptg/2, 100 - alpha_ptg/2], axis=0).T
+    elif alternative == 'less':
+        CI = np.vstack((-np.inf * np.ones((output_len)), np.percentile(boot_sample, 100-alpha_ptg, axis=0))).T
+    elif alternative == 'greater':
+        CI = np.vstack((np.percentile(boot_sample, alpha_ptg, axis=0), np.inf * np.ones((output_len)))).T
+    else:
+        raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
+    return CI
+
+def CI_all(data, stat, R=int(1e5), alpha=0.05):
+    specs = dict(percentile = (CI_percentile, {}),
+                 percentile_smooth = (CI_percentile, dict(smooth=True)),
+                 bca = (CI_bca, {}),
+                 studentized = (CI_studentized, {}),
+                 studentized_smooth = (CI_studentized, dict(smooth=True)),
+                 studentized_vs = (CI_studentized, dict(vs = True)),
+                 studentized_vs_smooth = (CI_studentized, dict(vs=True, smooth=True))
+                )
+    CIs = defaultdict(list)
+    for label, (func, kws) in tqdm(specs.items()):
+        CI = func(data, stat, R=R, alpha=alpha, **kws)
+        CIs['CI'].append(label)
+        if CI.shape[0] == 1 or CI.ndim == 1:
+            CI = CI.squeeze()
+            CIs['low'].append(CI[0])
+            CIs['high'].append(CI[1])
+        else:
+            CIs['low'].append(CI[:, 0])
+            CIs['high'].append(CI[:, 1])
+    return CI_specs(pd.DataFrame(CIs).set_index('CI'), data, stat)
