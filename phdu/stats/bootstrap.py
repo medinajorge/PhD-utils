@@ -275,14 +275,19 @@ def vs_transform(data, bootstrap_estimates, se_bootstrap, precision=1e-3, frac=2
     Variance-stabilizing transformation.
     """
     n_stats = bootstrap_estimates.shape[1]
-    g = np.empty((data.shape[0], n_stats))
+    g = np.empty((max(data.shape[0], 100), n_stats))
     lowess_linear_interp = []
     for i, (b, se, d) in enumerate(zip(bootstrap_estimates.T,  se_bootstrap.T, data.T)):
         x, y = lowess(se, b, frac=frac).T
         f_linear = interp1d(np.unique(x), y=np.unique(y), bounds_error=False, kind='linear', fill_value='extrapolate')
         z_min = d.min()
-        for k, z in enumerate(tqdm(d)):
+        for k, z in enumerate(d):
             g[k, i] = simpson3oct_vec(vs_integrand, z_min, z, precision, f_linear)[0]
+        if d.size < 100: # extra sampling for the inversion
+            z_std = d.std()
+            n = d.size
+            for k, z in enumerate(np.linspace(z_min - z_std, d.max() + z_std, 100 - n, endpoint=True), start=n):
+                g[k, i] = simpson3oct_vec(vs_integrand, z_min, z, precision, f_linear)[0]
         lowess_linear_interp.append(f_linear)
     return g, lowess_linear_interp
 
