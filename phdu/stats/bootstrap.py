@@ -296,7 +296,7 @@ def invert_CI(CI, z, g, lowess_linear_interp, frac=1/10, min_n=100, integration_
             extra_z = np.unique(np.linspace(z_min - z_std/2, z.max()+z_std/2, min_n - n))
             extra_g = np.empty((extra_z.size))
             for j, extra_zi in enumerate(extra_z):
-                extra_g[j] = bootstrap.simpson3oct_vec(bootstrap.vs_integrand, z_min, extra_zi, integration_precision, f_linear)[0]
+                extra_g[j] = simpson3oct_vec(vs_integrand, z_min, extra_zi, integration_precision, f_linear)[0]
             zi = np.hstack((zi, extra_z))
             gi = np.hstack((gi, extra_g))
         g_l, z_l = lowess(zi, gi, frac=frac).T
