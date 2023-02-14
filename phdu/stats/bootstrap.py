@@ -291,22 +291,17 @@ def invert_CI(CI, z, g, lowess_linear_interp, frac=1/10, min_n=100, integration_
     for k, (ci, zi, gi, f_linear) in enumerate(zip(CI, z.T, g.T, lowess_linear_interp)):
         n = zi.size
         if n < min_n:
-            z_std = zi.std()
+            z_std = zi.std() / np.sqrt(zi.size)
             z_min = zi.min()
-            extra_z = np.unique(np.linspace(z_min - z_std, zi.max() + z_std, min_n - n))
+            extra_z = np.unique(np.linspace(z_min - z_std/2, z.max()+z_std/2, min_n - n))
             extra_g = np.empty((extra_z.size))
             for j, extra_zi in enumerate(extra_z):
-                extra_g[j] = simpson3oct_vec(vs_integrand, z_min, extra_zi, integration_precision, f_linear)[0]
+                extra_g[j] = bootstrap.simpson3oct_vec(bootstrap.vs_integrand, z_min, extra_zi, integration_precision, f_linear)[0]
             zi = np.hstack((zi, extra_z))
             gi = np.hstack((gi, extra_g))
         g_l, z_l = lowess(zi, gi, frac=frac).T
         f_inv = interp1d(np.unique(g_l), y=np.unique(z_l), bounds_error=False, kind='linear', fill_value='extrapolate')
-        g_grid = np.linspace(gi.min(), gi.max(), 1000)
-        CI_inv = np.empty((2))
-        for i, bound in enumerate(ci):
-            closest = (np.abs(bound - g_grid)).argmin()
-            CI_inv[i] = f_inv(g_grid[closest])
-        CIs[k] = CI_inv
+        CIs[k] = f_inv(ci)
     return CIs
 
 def compute_CI_studentized(base, results, studentized_results, alpha=0.05):
