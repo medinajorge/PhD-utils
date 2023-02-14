@@ -2,6 +2,7 @@
 Numba version of bias-corrected and accelerated (BCa) bootstrap.
 """
 import numpy as np
+import pandas as pd
 from numba import njit, boolean
 from itertools import product
 from collections import defaultdict
