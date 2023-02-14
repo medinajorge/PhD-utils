@@ -421,4 +421,4 @@ def CI_all(data, stat, R=int(1e5), alpha=0.05, coverage_iters=int(1e4)):
         else:
             CIs['low'].append(CI[:, 0])
             CIs['high'].append(CI[:, 1])
-    return conf_interval.CI_specs(pd.DataFrame(CIs).set_index('CI'), data, stat, num_iters=coverage_iters)
+    return conf_interval.CI_specs(pd.DataFrame(CIs).set_index('CI'), data, stat, coverage_iters=coverage_iters)
