@@ -1,6 +1,7 @@
 from numba import njit
 import numpy as np
 import pandas as pd
+from .bootstrap import resample_nb
 try:
     import statsmodels.stats.api as sms
 except:
