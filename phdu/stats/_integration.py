@@ -14,29 +14,18 @@ def simpson3oct_vec(f, a, b, pre, *args):
     In = 0.
     In1 = 100.
     while abs(In - In1) > pre:
-        In1 = In
-        h = (b-a) / num
-        In = 0.
-        n = 1
         xgrid = np.linspace(a, b, num+1)
         ygrid = f(xgrid, *args)
-        if np.isnan(ygrid).all():
-            num += 12
-            continue
-        for k, y in zip(xgrid, ygrid):
-            if k == a:
-                In = In + (3/8.)*h*y
-            if k == b:
-                In = In + (3/8.)*h*y
-            elif n == 2:
-                In = In + (9*h/8.)*y
-            elif n == 3:
-                In = In + (9*h/8.)*y
-            elif n == 4:
-                In = In + (6*h/8.)*y
-            n += 1
-            if n == 5:
-                n = 2
+        if np.isnan(ygrid).all(): #restart
+            In = 0. 
+            In1 = 100.
+        else:            
+            In1 = In
+            h_3oct = 3*(b-a) / (8*num) # num + 1 edges, num intervals 
+            h_6oct = 2 * h_3oct
+            h_9oct = 3 * h_3oct
+            H = np.hstack((h_3oct, np.repeat(np.array([h_9oct, h_9oct, h_6oct])[None], 1 + num//3, axis=0).ravel()[:(num-1)], h_3oct))
+            In = (H * ygrid).sum()
         num += 3
     return In, num-3
 
