@@ -279,7 +279,7 @@ def vs_transform(data, bootstrap_estimates, se_bootstrap, precision=1e-3, frac=2
     lowess_linear_interp = []
     for i, (b, se, d) in enumerate(zip(bootstrap_estimates.T,  se_bootstrap.T, data.T)):
         x, y = lowess(se, b, frac=frac).T
-        f_linear = interp1d(x, y=y, bounds_error=False, kind='linear', fill_value='extrapolate')
+        f_linear = interp1d(np.unique(x), y=np.unique(y), bounds_error=False, kind='linear', fill_value='extrapolate')
         z_min = d.min()
         for k, z in enumerate(tqdm(d)):
             g[k, i] = simpson3oct_vec(vs_integrand, z_min, z, precision, f_linear)[0]
@@ -290,7 +290,7 @@ def invert_CI(CI, z, g, frac=1/10):
     CIs = np.empty(CI.shape)
     for k, (ci, zi, gi) in enumerate(zip(CI, z.T, g.T)):
         g_l, z_l = lowess(zi, gi, frac=frac).T
-        f_inv = interp1d(g_l, y=z_l, bounds_error=False, kind='linear', fill_value='extrapolate')
+        f_inv = interp1d(np.unique(g_l), y=np.unique(z_l), bounds_error=False, kind='linear', fill_value='extrapolate')
         g_grid = np.linspace(gi.min(), gi.max(), 1000)
         CI_inv = np.empty((2))
         for i, bound in enumerate(ci):
@@ -373,7 +373,7 @@ def _bootstrap_studentized_resampling(data, stat, alpha=0.05, R=10000, studentiz
     return base, results, studentized_results, se_bootstrap
 
 def CI_studentized(data, stat, R=int(1e5), alpha=0.05, smooth=False, vs=False, frac_g=2/3, frac_invert=1/10, studentized_reps=100, 
-                   integration_precision=1e-3, **kwargs):
+                   integration_precision=1e-4, **kwargs):
     base, results, studentized_results, se_bootstrap = _bootstrap_studentized_resampling(data, stat, smooth=smooth, R=R, studentized_reps=studentized_reps, **kwargs)
     if vs:
         g, lowess_flinear = vs_transform(data, results, se_bootstrap, precision=integration_precision, frac=frac_g)
@@ -401,7 +401,7 @@ def CI_percentile(data, stat, R=int(1e5), alpha=0.05, smooth=False, alternative=
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
     return CI
 
-def CI_all(data, stat, R=int(1e5), alpha=0.05, coverage_iters=int(1e4), coverage_seed=42):
+def CI_all(data, stat, R=int(1e5), alpha=0.05, coverage_iters=int(1e5), coverage_seed=42):
     specs = dict(percentile = (CI_percentile, {}),
                  percentile_smooth = (CI_percentile, dict(smooth=True)),
                  bca = (CI_bca, {}),
