@@ -400,7 +400,7 @@ def CI_percentile(data, stat, R=int(1e5), alpha=0.05, smooth=False, alternative=
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
     return CI
 
-def CI_all(data, stat, R=int(1e5), alpha=0.05):
+def CI_all(data, stat, R=int(1e5), alpha=0.05, coverage_iters=int(1e4)):
     specs = dict(percentile = (CI_percentile, {}),
                  percentile_smooth = (CI_percentile, dict(smooth=True)),
                  bca = (CI_bca, {}),
@@ -421,4 +421,4 @@ def CI_all(data, stat, R=int(1e5), alpha=0.05):
         else:
             CIs['low'].append(CI[:, 0])
             CIs['high'].append(CI[:, 1])
-    return conf_interval.CI_specs(pd.DataFrame(CIs).set_index('CI'), data, stat)
+    return conf_interval.CI_specs(pd.DataFrame(CIs).set_index('CI'), data, stat, num_iters=coverage_iters)
