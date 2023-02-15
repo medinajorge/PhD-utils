@@ -40,11 +40,18 @@ def CI_specs(CIs, data, stat, coverage_iters=int(1e4), seed=42, avg_len=3):
             CIs2[key.replace("_", "-")] = env[key]
     return CIs2
 
-def find_best(CIs, data=None, stat=None, alpha=0.05, alternative='two-sided', alpha_margin_last=0.075, alpha_margin_avg=0.015, **kwargs):
+def find_best(CIs, data=None, stat=None, alpha=0.05, alternative=None, alpha_margin_last=0.075, alpha_margin_avg=0.015, **kwargs):
     alpha_expanded_last = alpha + alpha_margin_last
     alpha_expanded_avg = alpha + alpha_margin_avg
     if 'coverage-last' not in CIs.columns:
         CIs = CI_specs(CIs, data, stat, **kwargs)
+    if alternative is None:
+        if (~np.isfinite(CIs['low'].values)).all():
+            alternative = 'less'
+        elif (~np.isfinite(CI['high'].values)).all():
+            alternative = 'greater'
+        else:
+            alternative = 'two-sided'
     
     coverages_last, coverages_avg = CIs[['coverage-last', 'coverage-avg']].values.T
     valid = np.unique(np.hstack([np.where(coverages_last >= (1-alpha_expanded_last))[0],
