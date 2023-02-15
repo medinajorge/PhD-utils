@@ -40,7 +40,7 @@ def CI_specs(CIs, data, stat, coverage_iters=int(1e4), seed=42, avg_len=3):
             CIs2[key.replace("_", "-")] = env[key]
     return CIs2
 
-def find_best(CIs, data=None, stat=None, alpha=0.05, alternative=None, alpha_margin_last=0.075, alpha_margin_avg=0.015, **kwargs):
+def find_best(CIs, data=None, stat=None, alpha=0.05, alternative=None, alpha_margin_last=0.0075, alpha_margin_avg=0.015, **kwargs):
     alpha_expanded_last = alpha + alpha_margin_last
     alpha_expanded_avg = alpha + alpha_margin_avg
     if 'coverage-last' not in CIs.columns:
