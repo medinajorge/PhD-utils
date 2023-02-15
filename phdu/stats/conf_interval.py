@@ -27,31 +27,33 @@ def coverage(*args, num_N=20, **kwargs):
 def CI_specs(CIs, data, stat, coverage_iters=int(1e4), seed=42, avg_len=3):
     CI_arr = CIs.values
     coverages = np.stack([coverage(CI, data, stat, num_iters=coverage_iters, seed=seed)[1] for CI in CI_arr], axis=1) # shape: (3, #CI, num_N)
-    low_fails_last, high_fails_last, coverages_last = coverages[:, :, -1]
-    low_fails_avg, high_fails_avg, coverages_avg = coverages[:, :, -avg_len:].mean(axis=-1)
+    low_fails_last, high_fails_last, coverage_last = coverages[:, :, -1]
+    low_fails_avg, high_fails_avg, coverage_avg = coverages[:, :, -avg_len:].mean(axis=-1)
     spread = np.hstack([np.diff(CI) for CI in CI_arr])
+    
     CIs2 = CIs.copy()
     CIs2['width'] = spread
-    env = locals()
-    for k in ['low_fails', 'high_fails', 'coverages']:
-        for end in ['avg', 'last']:
+    env = locals()    
+    for end in ['avg', 'last']:
+        for k in ['low_fails', 'high_fails', 'coverage']:
             key = f"{k}_{end}"
             CIs2[key.replace("_", "-")] = env[key]
     return CIs2
 
-def find_best(CIs, data=None, stat=None, alpha=0.05, alpha_margin_last=0.01, alpha_margin_avg=0.02):
+def find_best(CIs, data=None, stat=None, alpha=0.05, alternative='two-sided', alpha_margin_last=0.075, alpha_margin_avg=0.015, **kwargs):
     alpha_expanded_last = alpha + alpha_margin_last
     alpha_expanded_avg = alpha + alpha_margin_avg
-    if 'coverage-last' in CIs.columns:
-        coverages_last, coverages_avg, spread = CIs[['coverage-last', 'coverage-3-avg', 'width']].values.T
-    else:
-        CI_arr = CIs.values
-        coverages = np.vstack([coverage(CI, data, stat)[1] for CI in CI_arr]).T
-        coverages_avg = coverages[:-3].mean(axis=0)
-        coverages_last = coverages[-1]
-        spread = np.hstack([np.diff(CI) for CI in CI_arr])
+    if 'coverage-last' not in CIs.columns:
+        CIs = CI_specs(CIs, data, stat, **kwargs)
+    
+    coverages_last, coverages_avg = CIs[['coverage-last', 'coverage-avg']].values.T
     valid = np.unique(np.hstack([np.where(coverages_last >= (1-alpha_expanded_last))[0],
                                  np.where(coverages_avg >= (1-alpha_expanded_avg))[0],
                                  np.abs(coverages_last - (1-alpha)).argmin()]))
-    min_spread = spread[valid].argmin()
-    return CIs.iloc[valid].iloc[min_spread]
+    if alternative == 'two-sided':
+        best_interval = CIs['width'].values[valid].argmin()
+    elif alternative == 'less':
+        best_interval = CIs['high'].values[valid].argmin()
+    elif alternative == 'greater':
+        best_interval = CIs['low'].values[valid].argmax()
+    return CIs.iloc[valid].iloc[best_interval]

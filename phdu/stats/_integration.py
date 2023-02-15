@@ -13,7 +13,7 @@ def simpson3oct_vec(f, a, b, pre, *args, relative=True):
                       (False: absolute precision)
     """
     num = 3
-    In = 0.
+    In = -1
     In1 = 100.
     if relative:
         condition = lambda In, In1: abs((In-In1) / In1) > pre
