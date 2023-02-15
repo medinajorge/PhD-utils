@@ -48,7 +48,7 @@ def find_best(CIs, data=None, stat=None, alpha=0.05, alternative=None, alpha_mar
     if alternative is None:
         if (~np.isfinite(CIs['low'].values)).all():
             alternative = 'less'
-        elif (~np.isfinite(CI['high'].values)).all():
+        elif (~np.isfinite(CIs['high'].values)).all():
             alternative = 'greater'
         else:
             alternative = 'two-sided'
