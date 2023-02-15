@@ -301,21 +301,29 @@ def invert_CI(CI, z, g, lowess_linear_interp, frac=1/10, min_n=100, integration_
             gi = np.hstack((gi, extra_g))
         g_l, z_l = lowess(zi, gi, frac=frac).T
         f_inv = interp1d(np.unique(g_l), y=np.unique(z_l), bounds_error=False, kind='linear', fill_value='extrapolate')
-        CIs[k] = f_inv(ci)
+        finite_ci = np.isfinite(ci) # account for single-tail.
+        CIs[k, finite_ci] = f_inv(ci[finite_ci])
+        CIs[k, ~finite_ci] = ci[~finite_ci]
     return CIs
 
-def compute_CI_studentized(base, results, studentized_results, alpha=0.05):
+def compute_CI_studentized(base, results, studentized_results, alpha=0.05, alternative='two-sided'):
     R, output_len = results.shape
     bootstrap_estimate = results.mean(axis=0)
     errors = results - bootstrap_estimate
     std_err = np.asarray(np.sqrt(np.diag(errors.T.dot(errors) / R)))
-    percentiles = 100 * np.array([[alpha, 1.0 - alpha]] * output_len)
+    
     lower = np.empty((output_len))
     upper = np.empty((output_len))
+    alpha_tails = alpha / 2 if alternative == 'two-sided' else alpha
+    percentiles = 100 * np.array([[alpha_tails, 1.0 - alpha_tails]] * output_len)
     for i in range(output_len):
         lower[i], upper[i] = np.percentile(studentized_results[:, i], percentiles[i])
-    # Basic and studentized use the lower empirical quantile to compute upper and vice versa.  
-    
+    if alternative == 'less':
+        upper.fill(np.inf)
+    elif alternative == 'greater':
+        lower.fill(-1 * np.inf)
+        
+    # Basic and studentized use the lower empirical quantile to compute upper and vice versa.      
     lower_copy = lower + 0.0
     lower = base - upper * std_err
     upper = base - lower_copy * std_err
@@ -377,16 +385,18 @@ def _bootstrap_studentized_resampling(data, stat, alpha=0.05, R=10000, studentiz
             se_bootstrap[i] = se
     return base, results, studentized_results, se_bootstrap
 
-def CI_studentized(data, stat, R=int(1e5), alpha=0.05, smooth=False, vs=False, frac_g=2/3, frac_invert=1/10, studentized_reps=100, 
+def CI_studentized(data, stat, R=int(1e5), alpha=0.05, alternative='two-sided', smooth=False, vs=False, 
+                   frac_g=2/3, frac_invert=1/10, studentized_reps=100, 
                    integration_precision=1e-4, **kwargs):
+    assert alternative in ['two-sided', 'less', 'greater'], f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'."
     base, results, studentized_results, se_bootstrap = _bootstrap_studentized_resampling(data, stat, smooth=smooth, R=R, studentized_reps=studentized_reps, **kwargs)
     if vs:
         g, lowess_linear_interp = vs_transform(data, results, se_bootstrap, precision=integration_precision, frac=frac_g)
         base_g, results_g, studentized_results_g, _ = _bootstrap_studentized_resampling(g, stat, R=R, divide_by_se=False, smooth=False)
-        CI = invert_CI(compute_CI_studentized(base_g, results_g, studentized_results_g), 
+        CI = invert_CI(compute_CI_studentized(base_g, results_g, studentized_results_g, alpha=alpha, alternative=alternative), 
                        data, g, lowess_linear_interp, frac=frac_invert, integration_precision=integration_precision)
     else:
-        CI = compute_CI_studentized(base, results, studentized_results)
+        CI = compute_CI_studentized(base, results, studentized_results, alpha=alpha, alternative=alternative)
     return CI
 
 def CI_percentile(data, stat, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', **kwargs):
@@ -407,7 +417,7 @@ def CI_percentile(data, stat, R=int(1e5), alpha=0.05, smooth=False, alternative=
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
     return CI
 
-def CI_all(data, stat, R=int(1e5), alpha=0.05, coverage_iters=int(1e5), coverage_seed=42):
+def CI_all(data, stat, R=int(1e5), alpha=0.05, alternative='two-sided', coverage_iters=int(1e5), coverage_seed=42, avg_len=3):
     specs = dict(percentile = (CI_percentile, {}),
                  percentile_smooth = (CI_percentile, dict(smooth=True)),
                  bca = (CI_bca, {}),
@@ -419,7 +429,7 @@ def CI_all(data, stat, R=int(1e5), alpha=0.05, coverage_iters=int(1e5), coverage
                 )
     CIs = defaultdict(list)
     for label, (func, kws) in tqdm(specs.items()):
-        CI = func(data, stat, R=R, alpha=alpha, **kws)
+        CI = func(data, stat, R=R, alpha=alpha, alternative=alternative, **kws)
         CIs['CI'].append(label)
         if CI.shape[0] == 1 or CI.ndim == 1:
             CI = CI.squeeze()
@@ -428,4 +438,4 @@ def CI_all(data, stat, R=int(1e5), alpha=0.05, coverage_iters=int(1e5), coverage
         else:
             CIs['low'].append(CI[:, 0])
             CIs['high'].append(CI[:, 1])
-    return conf_interval.CI_specs(pd.DataFrame(CIs).set_index('CI'), data, stat, coverage_iters=coverage_iters, seed=coverage_seed)
+    return conf_interval.CI_specs(pd.DataFrame(CIs).set_index('CI'), data, stat, coverage_iters=coverage_iters, seed=coverage_seed, avg_len=avg_len)
