@@ -1,6 +1,7 @@
 from numba import njit
 import numpy as np
 import pandas as pd
+import math
 from . import bootstrap
 try:
     import statsmodels.stats.api as sms
@@ -64,3 +65,62 @@ def find_best(CIs, data=None, stat=None, alpha=0.05, alternative=None, alpha_mar
     elif alternative == 'greater':
         best_interval = CIs['low'].values[valid].argmax()
     return CIs.iloc[valid].iloc[best_interval]
+
+def exact_ci_percentile(x, p, alpha=0.05, alternative='two-sided', d_alpha=0.005):
+    """
+    Confidence 1 - alpha that the interval (Yi, Yj) contains the percentile p. Yi, Yj are order statistics.
+    Attrs:
+        - p:  percentile in (0, 1)
+    https://online.stat.psu.edu/stat415/book/export/html/835
+    """
+    x_sorted = np.sort(x)
+    n = x.size
+    def confidence(low, high):    
+        return np.array([math.comb(n, k) * p**k * (1-p)**(n-k) for k in range(low, high)]).sum()
+    c = {}
+    if alternative == 'two-sided':
+        for low in range(1, n):
+            for high in range(low+1, n+1):
+                c[(low-1, high-1)] = confidence(low, high)
+    elif alternative == 'less':
+        for high in range(1, n+1):
+            c[high-1] = confidence(0, high)
+    elif alternative == 'greater':
+        for low in range(1, n+1): 
+            c[low-1] = 1 - confidence(0, low)
+    c = pd.Series(c)
+    c_pruned = c[(c - (1-alpha)).abs() < d_alpha]
+    c_pruned = c_pruned.to_frame(name='confidence')
+    if alternative == 'two-sided':
+        low, high = [np.array(_) for _ in zip(*[x_sorted[list(i)] for i in c_pruned.index])]
+        sample_stat = np.percentile(x, p*100)
+        c_pruned['low'] = low
+        c_pruned['high'] = high
+        c_pruned['width'] = high - low
+        c_pruned['asymmetry'] = (high - sample_stat) / (sample_stat - low)
+        c_pruned = c_pruned.sort_values(['width', 'confidence'], ascending=[True, False])
+    else:
+        bound = [x_sorted[i] for i in c_pruned.index]
+        if alternative == 'greater':
+            c_pruned['low'] = bound 
+            c_pruned['high'] = np.inf
+        else:
+            c_pruned['low'] = -1 * np.inf
+            c_pruned['high'] = bound
+    return c_pruned
+
+def find_ci_percentile_exact_confidence(ci, x, p, tol=1e-3):
+    """
+    Given a CI 'ci' from data 'x' of a percentile statistic, return the exact confidence it provides.
+    """
+    if not math.isfinite(ci[0]):
+        alternative = 'less'
+        prune = lambda c: c[(c['high'] - ci[1]).abs() < tol]
+    elif not math.isfinite(ci[1]):
+        alternative = 'greater'
+        prune = lambda c: c[(c['low'] - ci[0]).abs() < tol]
+    else:
+        alternative = 'two-sided'
+        prune = lambda c: c[((c['low'] - ci[0]).abs() < tol) & ((c['high'] - ci[1]).abs() < tol)]
+    c = exact_ci_percentile(x, p, alternative=alternative, d_alpha=0.5)
+    return prune(c)
