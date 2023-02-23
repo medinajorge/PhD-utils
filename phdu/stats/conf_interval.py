@@ -12,11 +12,17 @@ def t_interval(x, alpha=0.05, alternative="two-sided"):
     return sms.DescrStatsW(x).tconfint_mean(alpha=alpha, alternative=alternative)
 
 @njit
-def compute_coverage(CI, data, stat, N, seed=0, num_iters=1000):
+def compute_coverage(CI, data, stat, N, seed=0, num_iters=1000, closed_right=True, closed_left=True, tol=1e-8):
     low, high = CI
     estimates = bootstrap.resample_nb(data, stat, R=num_iters, N=N, seed=seed)[:, 0]
-    low_fails = (estimates < low).mean()
-    high_fails = (estimates > high).mean()
+    if closed_left:
+        low_fails = (estimates < low).mean()
+    else:
+        low_fails = (estimates <= (low+tol)).mean()
+    if closed_right:
+        high_fails = (estimates > high).mean()
+    else:
+        high_fails = (estimates >= (high-tol)).mean()
     coverage = 1 - (low_fails + high_fails)
     return np.array([low_fails, high_fails, coverage])
 
@@ -25,10 +31,11 @@ def coverage(*args, num_N=20, **kwargs):
     covg_data = np.vstack([compute_coverage(*args, N=N, **kwargs) for N in Ns]).T # shape: (3, num_N).  3: low_fails, high_fails, coverage
     return Ns, covg_data
 
-def CI_specs(CIs, data, stat, coverage_iters=int(1e4), seed=42, avg_len=3):
+def CI_specs(CIs, data, stat, coverage_iters=int(1e4), seed=42, avg_len=3, **coverage_kws):
     CI_arr = CIs.values
     sample_stat = stat(data)
-    coverages = np.stack([coverage(CI, data, stat, num_iters=coverage_iters, seed=seed)[1] for CI in CI_arr], axis=1) # shape: (3, #CI, num_N)
+    coverages = np.stack([coverage(CI, data, stat, num_iters=coverage_iters, seed=seed, **coverage_kws)[1] for CI in CI_arr], axis=1)
+    # coverages shape: (3, #CI, num_N)
     low_fails_last, high_fails_last, coverage_last = coverages[:, :, -1]
     low_fails_avg, high_fails_avg, coverage_avg = coverages[:, :, -avg_len:].mean(axis=-1)
 
@@ -94,16 +101,16 @@ def ci_percentile_equal_tailed(x, p, alpha=0.05, alternative='two-sided'):
     
     if alternative == 'two-sided':
         l = np.where(p_below_percentile <= alpha/2)[0][-1] + 1 
-        u = np.where(p_below_percentile >= (1- alpha/2))[0][0]
+        u = np.where(p_below_percentile >= (1- alpha/2))[0][0] - 1
         ci_equal_tailed = [l, u]
-        quantiles = p_below_percentile[[l-1, u]] # p(X < l) = p(x <= l-1) = cdf(l-1)
-        CI_prob = np.array(ci_equal_tailed) / n
+        quantiles = p_below_percentile[[l-1, u+1]] # p(X < l) = p(x <= l-1) = cdf(l-1)
+        CI_prob = np.array([l, u+1]) / n # add 1 to both endpoints (indexing in python starts at 0)
         CI = np.sort(x)[ci_equal_tailed]
     elif alternative == 'less':
-        u = np.where(p_below_percentile >= (1- alpha))[0][0] + 1
-        quantiles = p_below_percentile[u-1]
+        u = np.where(p_below_percentile >= (1- alpha))[0][0]
+        quantiles = p_below_percentile[u]
         CI = np.array([-np.inf, np.sort(x)[u]])
-        CI_prob = u / n
+        CI_prob = (u+1) / n
     elif alternative == 'greater':
         l = np.where(p_below_percentile <= alpha)[0][-1]
         quantiles = p_below_percentile[l]
