@@ -441,7 +441,7 @@ def CI_all(data, stat, R=int(1e5), alpha=0.05, alternative='two-sided', coverage
                  studentized_vs = (CI_studentized, dict(vs=True)),
                  studentized_vs_smooth = (CI_studentized, dict(vs=True, smooth=True))
                 )
-    specs = {k: v for k, v if k not in exclude} 
+    specs = {k: v for k, v in specs.items() if k not in exclude} 
     
     CIs = defaultdict(list)
     for label, (func, kws) in tqdm(specs.items()):
