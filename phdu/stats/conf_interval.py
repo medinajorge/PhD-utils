@@ -27,13 +27,14 @@ def coverage(*args, num_N=20, **kwargs):
 
 def CI_specs(CIs, data, stat, coverage_iters=int(1e4), seed=42, avg_len=3):
     CI_arr = CIs.values
+    sample_stat = stat(data)
     coverages = np.stack([coverage(CI, data, stat, num_iters=coverage_iters, seed=seed)[1] for CI in CI_arr], axis=1) # shape: (3, #CI, num_N)
     low_fails_last, high_fails_last, coverage_last = coverages[:, :, -1]
     low_fails_avg, high_fails_avg, coverage_avg = coverages[:, :, -avg_len:].mean(axis=-1)
-    spread = np.hstack([np.diff(CI) for CI in CI_arr])
-    
+
     CIs2 = CIs.copy()
-    CIs2['width'] = spread
+    CIs2['width'] = np.hstack([np.diff(CI) for CI in CI_arr])
+    CIs2['asymmetry'] = np.hstack([(CI[1] - sample_stat) / (sample_stat - CI[0]) for CI in CI_arr])
     env = locals()    
     for end in ['avg', 'last']:
         for k in ['low_fails', 'high_fails', 'coverage']:
@@ -66,8 +67,55 @@ def find_best(CIs, data=None, stat=None, alpha=0.05, alternative=None, alpha_mar
         best_interval = CIs['low'].values[valid].argmax()
     return CIs.iloc[valid].iloc[best_interval]
 
-def exact_ci_percentile(x, p, alpha=0.05, alternative='two-sided', d_alpha=0.005):
+def ci_percentile_equal_tailed(x, p, alpha=0.05, alternative='two-sided'):
     """
+    Exact confidence interval for percentiles. 
+    Attrs:
+        - p:  percentile in (0, 1)
+            
+    Returns CI [Yi, Yj] such that Prob(x in CI) => 1 - alpha. Yi, Yj are order statistics.
+    https://online.stat.psu.edu/stat415/book/export/html/835
+    """
+    n = x.size
+    if n < 500:    
+        def binom_cdf(x): 
+            return np.array([math.comb(n, k) * p**k * (1-p)**(n-k) for k in range(x+1)]).sum()
+        binom_cdf = np.vectorize(binom_cdf)
+        #def binom_pmf(x):    
+        #    return math.comb(n, x) * p**x * (1-p)**(n-x)
+    else:
+        try:
+            from scipy.stats import binom
+            binom_cdf = lambda x: binom.cdf(x, n, p)
+        except:
+            raise ImportError('scipy not found. Please install it for n > 500. Alternatively, use the normal aproximation for the binomial.')          
+    
+    p_below_percentile = binom_cdf(np.arange(n))
+    
+    if alternative == 'two-sided':
+        l = np.where(p_below_percentile <= alpha/2)[0][-1] + 1 
+        u = np.where(p_below_percentile >= (1- alpha/2))[0][0]
+        ci_equal_tailed = [l, u]
+        quantiles = p_below_percentile[[l-1, u]] # p(X < l) = p(x <= l-1) = cdf(l-1)
+        CI_prob = np.array(ci_equal_tailed) / n
+        CI = np.sort(x)[ci_equal_tailed]
+    elif alternative == 'less':
+        u = np.where(p_below_percentile >= (1- alpha))[0][0] + 1
+        quantiles = p_below_percentile[u-1]
+        CI = np.array([-np.inf, np.sort(x)[u]])
+        CI_prob = u / n
+    elif alternative == 'greater':
+        l = np.where(p_below_percentile <= alpha)[0][-1]
+        quantiles = p_below_percentile[l]
+        CI = np.array([np.sort(x)[l], np.inf])
+        CI_prob = l / n
+    return CI, CI_prob, quantiles
+
+
+def _exact_ci_percentile(x, p, alpha=0.05, alternative='two-sided', d_alpha=0.005):
+    """
+    DO NOT USE. This does not guarantee equal tailed. It is here as a reminder.
+    
     Confidence 1 - alpha that the interval (Yi, Yj) contains the percentile p. Yi, Yj are order statistics.
     Attrs:
         - p:  percentile in (0, 1)
@@ -109,8 +157,10 @@ def exact_ci_percentile(x, p, alpha=0.05, alternative='two-sided', d_alpha=0.005
             c_pruned['high'] = bound
     return c_pruned
 
-def find_ci_percentile_exact_confidence(ci, x, p, tol=1e-3):
+def _find_ci_percentile_exact_confidence(ci, x, p, tol=1e-3):
     """
+    DO NOT USE. This does not guarantee equal tailed CI.
+    
     Given a CI 'ci' from data 'x' of a percentile statistic, return the exact confidence it provides.
     """
     if not math.isfinite(ci[0]):
@@ -122,5 +172,5 @@ def find_ci_percentile_exact_confidence(ci, x, p, tol=1e-3):
     else:
         alternative = 'two-sided'
         prune = lambda c: c[((c['low'] - ci[0]).abs() < tol) & ((c['high'] - ci[1]).abs() < tol)]
-    c = exact_ci_percentile(x, p, alternative=alternative, d_alpha=0.5)
+    c = _exact_ci_percentile(x, p, alternative=alternative, d_alpha=0.5)
     return prune(c)
