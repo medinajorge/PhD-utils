@@ -1,5 +1,8 @@
 """
 Numba version of bias-corrected and accelerated (BCa) bootstrap.
+                 studentized.
+                 studentized (variance-stabilized).
+                 percentile.
 """
 import numpy as np
 import pandas as pd
@@ -417,7 +420,18 @@ def CI_percentile(data, stat, R=int(1e5), alpha=0.05, smooth=False, alternative=
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
     return CI
 
-def CI_all(data, stat, R=int(1e5), alpha=0.05, alternative='two-sided', coverage_iters=int(1e5), coverage_seed=42, avg_len=3):
+def CI_all(data, stat, R=int(1e5), alpha=0.05, alternative='two-sided', coverage_iters=int(1e5), coverage_seed=42, avg_len=3, exclude=[]):
+    """
+    Computes all CIs. 
+    exclude: CIs to exclude. Available: percentile
+                                        percentile_smooth
+                                        bca
+                                        bca_smooth 
+                                        studentized
+                                        studentized_smooth
+                                        studentized_vs
+                                        studentized_vs_smooth
+    """
     specs = dict(percentile = (CI_percentile, {}),
                  percentile_smooth = (CI_percentile, dict(smooth=True)),
                  bca = (CI_bca, {}),
@@ -427,6 +441,8 @@ def CI_all(data, stat, R=int(1e5), alpha=0.05, alternative='two-sided', coverage
                  studentized_vs = (CI_studentized, dict(vs=True)),
                  studentized_vs_smooth = (CI_studentized, dict(vs=True, smooth=True))
                 )
+    specs = {k: v for k, v if k not in exclude} 
+    
     CIs = defaultdict(list)
     for label, (func, kws) in tqdm(specs.items()):
         CI = func(data, stat, R=R, alpha=alpha, alternative=alternative, **kws)
