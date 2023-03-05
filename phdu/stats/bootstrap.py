@@ -471,7 +471,7 @@ def power_analysis_naive(data, statistic, low, high, N_values=np.array([5, 10, 2
     if n not in N_values:
         N_values = np.sort(np.hstack((n, N_values)))
     for N in N_values:
-        data_resampled = bootstrap.resample_nb(data, statistic, R=int(1e4), N=N, seed=seed)
+        data_resampled = resample_nb(data, statistic, R=int(1e4), N=N, seed=seed)
         fail_low = (data_resampled < low).mean()
         fail_high = (data_resampled > high).mean()
         power = 1 - fail_low - fail_high
@@ -493,7 +493,7 @@ def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([
     """
     n = data.shape[0]
     base = statistic(data)
-    se_estimate = np.sqrt(np.diag(cov(bootstrap.resample_nb(data, statistic, seed=seed, R=R_se, output_len=output_len), 
+    se_estimate = np.sqrt(np.diag(cov(resample_nb(data, statistic, seed=seed, R=R_se, output_len=output_len), 
                                       base,
                                       recenter=recenter)
                                  ))    
