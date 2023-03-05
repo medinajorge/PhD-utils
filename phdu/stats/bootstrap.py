@@ -457,3 +457,69 @@ def CI_all(data, stat, R=int(1e5), alpha=0.05, alternative='two-sided', coverage
             CIs['low'].append(CI[:, 0])
             CIs['high'].append(CI[:, 1])
     return conf_interval.CI_specs(pd.DataFrame(CIs).set_index('CI'), data, stat, coverage_iters=coverage_iters, seed=coverage_seed, avg_len=avg_len)
+
+def power_analysis_naive(data, statistic, low, high, N_values=np.array([5, 10, 25, 50, 100, 200]), R=int(1e4), seed=0):
+    """
+    Naive bootstrap power and sample-size calculation for accepting H0. 
+    Computes violations on the low and high bound of H0.
+    See Efron-Tshibirani: An introduction to the bootstrap,  p. 379-381.
+    
+    Returns: dataframe with index=N_values, columns=[low_fails, high_fails, power].
+    """
+    results = defaultdict(list)
+    n = data.shape[0]
+    if n not in N_values:
+        N_values = np.sort(np.hstack((n, N_values)))
+    for N in N_values:
+        data_resampled = bootstrap.resample_nb(data, statistic, R=int(1e4), N=N, seed=seed)
+        fail_low = (data_resampled < low).mean()
+        fail_high = (data_resampled > high).mean()
+        power = 1 - fail_low - fail_high
+        results['violations-low'].append(fail_low)
+        results['violations-high'].append(fail_high)
+        results['power'].append(power)
+    return pd.DataFrame(results, index=N_values)
+
+def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([5, 10, 25, 50, 100, 200]), recenter=False, seed=0,
+                   R=int(1e4), R_se=int(1e5), R_se_nested=int(1e3)):
+    """
+    Stable bootstrap power and sample-size calculation for accepting H0. 
+    Computes violations on the studentized equivalent for the low and high bound of H0.
+    Takes into account the variability in the original sample (size n):   bootstrap estimate, SE of the bootstrap estimate.
+                                     and in the future sample (size N):   bootstrap estimate.
+    See Efron-Tshibirani: An introduction to the bootstrap,  p. 381-384.
+    
+    Returns: dataframe with index=N_values, columns=[low_fails, high_fails, power].
+    """
+    n = data.shape[0]
+    base = statistic(data)
+    se_estimate = np.sqrt(np.diag(cov(bootstrap.resample_nb(data, statistic, seed=seed, R=R_se, output_len=output_len), 
+                                      base,
+                                      recenter=recenter)
+                                 ))    
+    low_studentized = (base - low) / se_estimate
+    high_studentized = (base - high) / se_estimate
+    
+    # Estimation of SE (datasize = n). This is the computational bottleneck.
+    data_n = resample_nb_X(data, R=R, seed=seed+1)
+    se_estimate_n = np.empty((R, output_len))
+    estimate_n = np.empty((R, output_len))
+    for i, d_n in enumerate(tqdm(data_n)):
+        estimate_n_i = statistic(d_n)
+        nested_estimate_n = resample_nb(d_n, statistic, seed=seed+3+i, R=R_se_nested, output_len=output_len)
+        estimate_n[i] = estimate_n_i
+        se_estimate_n[i] = np.sqrt(np.diag(cov(nested_estimate_n, estimate_n_i, recenter=recenter))) 
+        
+    # Violations of studentized endpoints.
+    results = defaultdict(list)
+    for N in N_values:
+        estimate_N = resample_nb(data, statistic, N=N, R=R, seed=seed+2, output_len=output_len)
+        T = (estimate_n - estimate_N) / se_estimate_n           
+        low_violations = (T >= low_studentized).mean()
+        high_violations = (T <= high_studentized).mean()
+        power = 1 - low_violations - high_violations
+        results['violations-low'].append(low_violations)
+        results['violations-high'].append(high_violations)
+        results['power'].append(power)
+        
+    return pd.DataFrame(results, index=N_values)
