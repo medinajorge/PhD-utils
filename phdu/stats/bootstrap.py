@@ -48,12 +48,14 @@ def resample_paired_nb(X, Y, func, output_len=1, R=int(1e6), seed=0):
     return boot_sample
 
 @njit
-def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=int(1e12)):
+def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=0):
     """X: array of shape (N_samples, n_vars)."""
     np.random.seed(seed)
-    N = min(X.shape[0], N)
-    idxs_resampling = np.random.randint(low=0, high=N, size=R*N)
-    data_resampled = X[idxs_resampling].reshape(R, N, X.shape[1])
+    n, output_len = X.shape
+    if N == 0:
+        N = n
+    idxs_resampling = np.random.randint(low=0, high=n, size=R*N)
+    data_resampled = X[idxs_resampling].reshape(R, N, output_len)
     if smooth:
         def x_in_percentile(x):
             low, high  = np.percentile(x, [5, 95])
@@ -69,7 +71,7 @@ def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=int(1e12)):
     return data_resampled
 
 @njit
-def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=int(1e12)):
+def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
     """X: array of shape (N_samples, n_vars)."""
     data_resampled = resample_nb_X(X, R=R, seed=seed, smooth=smooth, N=N)
     
