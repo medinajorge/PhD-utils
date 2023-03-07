@@ -355,8 +355,8 @@ def cov(results, base=None, recenter=False):
         errors = results - base
     return errors.T.dot(errors) / results.shape[0]
 
-def _bootstrap_studentized_resampling(data, stat, alpha=0.05, R=10000, studentized_reps=100, recenter=False, se_func=None, seed=0, divide_by_se=True, smooth=False):
-    base = np.asarray(stat(data))
+def _bootstrap_studentized_resampling(data, statistic, alpha=0.05, R=10000, studentized_reps=100, recenter=False, se_func=None, seed=0, divide_by_se=True, smooth=False):
+    base = np.asarray(statistic(data))
     output_len = base.size
     studentized_results = np.empty((R, output_len))
     results = np.empty((R, output_len))
@@ -364,7 +364,7 @@ def _bootstrap_studentized_resampling(data, stat, alpha=0.05, R=10000, studentiz
     n = data.shape[0]
     if divide_by_se:
         def get_studentized(data_r, result, seed):
-            nested_resampling = resample_nb(data_r, stat, R=studentized_reps, output_len=output_len, seed=seed, smooth=False)        
+            nested_resampling = resample_nb(data_r, statistic, R=studentized_reps, output_len=output_len, seed=seed, smooth=False)        
             std_err = np.sqrt(np.diag(cov(nested_resampling, result, recenter=recenter)))
             err = result - base
             t_result = err /std_err
@@ -376,41 +376,41 @@ def _bootstrap_studentized_resampling(data, stat, alpha=0.05, R=10000, studentiz
     data_r = resample_nb_X(data, R=R, seed=seed, smooth=smooth)
     if se_func is None:
         for i, d_r in enumerate(data_r):
-            result = stat(d_r)
+            result = statistic(d_r)
             t_result, std_err = get_studentized(d_r, result, i)
             results[i] = result
             studentized_results[i] = t_result # t = (x^ - x) / s
             se_bootstrap[i] = std_err
     else:
         for i, d_r in enumerate(data_r):
-            result = stat(d_r)
+            result = statistic(d_r)
             se = se_func(d_r)
             results[i] = result
             studentized_results[i] = (result - base) / se
             se_bootstrap[i] = se
     return base, results, studentized_results, se_bootstrap
 
-def CI_studentized(data, stat, R=int(1e5), alpha=0.05, alternative='two-sided', smooth=False, vs=False, 
+def CI_studentized(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sided', smooth=False, vs=False, 
                    frac_g=2/3, frac_invert=1/10, studentized_reps=100, 
                    integration_precision=1e-4, **kwargs):
     assert alternative in ['two-sided', 'less', 'greater'], f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'."
-    base, results, studentized_results, se_bootstrap = _bootstrap_studentized_resampling(data, stat, smooth=smooth, R=R, studentized_reps=studentized_reps, **kwargs)
+    base, results, studentized_results, se_bootstrap = _bootstrap_studentized_resampling(data, statistic, smooth=smooth, R=R, studentized_reps=studentized_reps, **kwargs)
     if vs:
         g, lowess_linear_interp = vs_transform(data, results, se_bootstrap, precision=integration_precision, frac=frac_g)
-        base_g, results_g, studentized_results_g, _ = _bootstrap_studentized_resampling(g, stat, R=R, divide_by_se=False, smooth=False)
+        base_g, results_g, studentized_results_g, _ = _bootstrap_studentized_resampling(g, statistic, R=R, divide_by_se=False, smooth=False)
         CI = invert_CI(compute_CI_studentized(base_g, results_g, studentized_results_g, alpha=alpha, alternative=alternative), 
                        data, g, lowess_linear_interp, frac=frac_invert, integration_precision=integration_precision)
     else:
         CI = compute_CI_studentized(base, results, studentized_results, alpha=alpha, alternative=alternative)
     return CI
 
-def CI_percentile(data, stat, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', **kwargs):
-    sample_stat = stat(data)
+def CI_percentile(data, statistic, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', **kwargs):
+    sample_stat = statistic(data)
     if hasattr(sample_stat, "__len__"):
         output_len = len(sample_stat)
     else:
         output_len = 1
-    boot_sample = resample_nb(data, stat, R=R, smooth=smooth, output_len=output_len, **kwargs)
+    boot_sample = resample_nb(data, statistic, R=R, smooth=smooth, output_len=output_len, **kwargs)
     alpha_ptg = alpha*100
     if alternative == 'two-sided':
         CI = np.percentile(boot_sample, [alpha_ptg/2, 100 - alpha_ptg/2], axis=0).T
@@ -422,7 +422,7 @@ def CI_percentile(data, stat, R=int(1e5), alpha=0.05, smooth=False, alternative=
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
     return CI
 
-def CI_all(data, stat, R=int(1e5), alpha=0.05, alternative='two-sided', coverage_iters=int(1e5), coverage_seed=42, avg_len=3, exclude=[]):
+def CI_all(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sided', coverage_iters=int(1e5), coverage_seed=42, avg_len=3, exclude=['studentized_vs', 'studentized_vs_smooth']):
     """
     Computes all CIs. 
     exclude: CIs to exclude. Available: percentile
@@ -447,7 +447,7 @@ def CI_all(data, stat, R=int(1e5), alpha=0.05, alternative='two-sided', coverage
     
     CIs = defaultdict(list)
     for label, (func, kws) in tqdm(specs.items()):
-        CI = func(data, stat, R=R, alpha=alpha, alternative=alternative, **kws)
+        CI = func(data, statistic, R=R, alpha=alpha, alternative=alternative, **kws)
         CIs['CI'].append(label)
         if CI.shape[0] == 1 or CI.ndim == 1:
             CI = CI.squeeze()
@@ -456,7 +456,7 @@ def CI_all(data, stat, R=int(1e5), alpha=0.05, alternative='two-sided', coverage
         else:
             CIs['low'].append(CI[:, 0])
             CIs['high'].append(CI[:, 1])
-    return conf_interval.CI_specs(pd.DataFrame(CIs).set_index('CI'), data, stat, coverage_iters=coverage_iters, seed=coverage_seed, avg_len=avg_len)
+    return conf_interval.CI_specs(pd.DataFrame(CIs).set_index('CI'), data, statistic, coverage_iters=coverage_iters, seed=coverage_seed, avg_len=avg_len)
 
 def power_analysis_naive(data, statistic, low, high, N_values=np.array([5, 10, 25, 50, 100, 200]), R=int(1e4), seed=0):
     """

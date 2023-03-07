@@ -7,8 +7,8 @@ from . import plots
 from . import stats
 from . import decomposition
 from . import clustering
+from .stats import bootstrap, conf_interval
 from .stats.rtopy import resample
 from .stats.test import permutation
-from .stats.bootstrap import CI_bca
 from .storage import delete_stdin_files
 from .script_fmt import getopt_printer, incompleted_programs_shell_script
