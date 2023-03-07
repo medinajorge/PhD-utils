@@ -2,13 +2,13 @@ from setuptools import setup, find_packages
 
 setup(
     name='phdu',
-    version='1.4.b2',
+    version='1.5.b1',
     author="Jorge Medina Hernández",
     author_email='medinahdezjorge@gmail.com',
     packages=find_packages("."),
     url='https://github.com/medinajorge/PhD-utils',
     download_url='https://github.com/medinajorge/PhD-utils/archive/refs/tags/v1.1-beta.tar.gz',
-    description="Automatically store/load data in a tidy, efficient way.",
+    description="Automatically store/load data in a tidy, efficient way. Includes functions for data visualization and analysis.",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     keywords=['science', 'statistics', 'tidy', 'project organization', 'project', 'organization', 'path', 'storage'],
@@ -32,11 +32,13 @@ setup(
         'Pillow',
     ],
     extras_require={
-        "all": ["matplotlib", "plotly", "kaleido", "statsmodels", "rpy2", "colorlover"],
+        "all": ["matplotlib", "plotly", "kaleido", "statsmodels", "rpy2", "colorlover", "sklearn"],
+        "basic": ["matplotlib", "plotly", "kaleido", "colorlover", "sklearn"],
         "matplotlib": "matplotlib",
         "plotly": ["plotly", "kaleido"],        
         "colorlover": "colorlover",
         'statsmodels': 'statsmodels',
-        "r": "rpy2"
+        "r": "rpy2",
+        "sklearn": "sklearn"
     },
 )

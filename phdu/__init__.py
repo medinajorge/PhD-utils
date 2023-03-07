@@ -5,6 +5,8 @@ from . import pd_utils
 from . import storage
 from . import plots
 from . import stats
+from . import decomposition
+from . import clustering
 from .stats.rtopy import resample
 from .stats.test import permutation
 from .stats.bootstrap import CI_bca
