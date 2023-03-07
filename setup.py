@@ -7,7 +7,7 @@ setup(
     author_email='medinahdezjorge@gmail.com',
     packages=find_packages("."),
     url='https://github.com/medinajorge/PhD-utils',
-    download_url='https://github.com/medinajorge/PhD-utils/archive/refs/tags/v1.1-beta.tar.gz',
+    download_url='https://github.com/medinajorge/PhD-utils/archive/refs/tags/v1.5-beta.tar.gz',
     description="Automatically store/load data in a tidy, efficient way. Includes functions for data visualization and analysis.",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
