@@ -13,9 +13,8 @@ The module `utils.resample` allows calls to the `resample` [R package](https://c
 
 ## Numba-accelerated permutation tests
 Subpackage `utils.stats.tests.permutation`. 
-- Faster permutation tests for the means and medians. 
+- Permutation tests for any statistic. 
 - Includes paired and block-paired cases.
-- Schemes for adding other statistics in a numba-compatible way: `_permutation_test_2sample_paired`, `_permutation_test_2sample_paired_block` and  `_permutation_test_2sample_not_paired` functions.
 
 ## Demo
 Please check the [example notebook](https://github.com/medinajorge/PhD-utils/blob/master/tests/Example.ipynb).
@@ -32,4 +31,4 @@ Please check the [example notebook](https://github.com/medinajorge/PhD-utils/blo
 
   ```pip install phdu[dependencies]```
   
-  Where `dependencies` can be `all` (recommended), `r` (needed for `resample` to work), `statsmodels`, `matplotlib` or `plotly`.
+  Where `dependencies` can be `base` (recommended), `all`, `r` (needed for `resample` to work), `statsmodels`, `matplotlib` or `plotly`.
