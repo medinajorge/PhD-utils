@@ -33,7 +33,7 @@ from ._integration import simpson3oct_vec
 from . import conf_interval
     
 @njit
-def resample_paired_nb(X, Y, func, output_len=1, R=int(1e6), seed=0):
+def resample_paired_nb(X, Y, func, output_len=1, R=int(1e5), seed=0):
     np.random.seed(seed)
     N = X.size    
     data_paired = np.vstack((X, Y)).T
@@ -192,7 +192,7 @@ def _percentile_of_score(a, score, axis, account_equal=False):
     else:
         return (a < score).sum(axis=axis) / B
     
-def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(2e5), account_equal=False, use_numba=True, n_min=5, **kwargs):
+def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba=True, n_min=5, **kwargs):
     """If data2 is provided, assumes a block resampling and statistic takes two arguments."""
     if alternative == 'two-sided':
         probs = np.array([alpha/2, 1 - alpha/2])
