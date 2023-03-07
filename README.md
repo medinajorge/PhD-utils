@@ -10,7 +10,7 @@ Don't spend time creating directories, deciding filenames, saving, loading, etc.
 The module `phdu.resample` allows calls to the `resample` [R package](https://cran.r-project.org/web/packages/resample/resample.pdf).
 - Provides CI and permutation tests.
 - CIs can account narrowness bias, skewness and other errors in CI estimation, as indicated in the [article](https://arxiv.org/abs/1411.5279)
-Alternatively, use `phdu.stats.bootstrap` for numba-accelerated computation (does not call `resample`).
+- Alternatively, use `phdu.stats.bootstrap` for numba-accelerated computation (does not call `resample`).
 
 ## Bootstrap-based power analysis.
 Calculate the power for accepting H0 and estimate the needed sample size.
