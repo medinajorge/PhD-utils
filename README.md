@@ -7,14 +7,19 @@ For people that have to compute and store a large variety of data and/or perform
 Don't spend time creating directories, deciding filenames, saving, loading, etc. Decorators `savefig` & `savedata` will do it for you with optimal compression. More info at the `tidypath` [repository](https://github.com/medinajorge/tidypath).
 
 ## Estimate confidence intervals
-The module `utils.resample` allows calls to the `resample` [R package](https://cran.r-project.org/web/packages/resample/resample.pdf).
+The module `phdu.resample` allows calls to the `resample` [R package](https://cran.r-project.org/web/packages/resample/resample.pdf).
 - Provides CI and permutation tests.
 - CIs can account narrowness bias, skewness and other errors in CI estimation, as indicated in the [article](https://arxiv.org/abs/1411.5279)
+Alternatively, use `phdu.stats.bootstrap` for numba-accelerated computation (does not call `resample`).
+
+## Bootstrap-based power analysis.
+Calculate the power for accepting H0 and estimate the needed sample size.
+Function `power_analysis` in `phdu.stats.bootstrap` follows Efron-Tshibirani: An introduction to the bootstrap,  p. 381-384.
 
 ## Numba-accelerated permutation tests
-Subpackage `utils.stats.tests.permutation`. 
+Module `phdu.stats.tests.permutation`. 
 - Permutation tests for any statistic. 
-- Includes paired and block-paired cases.
+- Includes paired and block cases.
 
 ## Demo
 Please check the [example notebook](https://github.com/medinajorge/PhD-utils/blob/master/tests/Example.ipynb).
