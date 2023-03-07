@@ -212,16 +212,16 @@ def get_permutation_test(stat_func, pairing=None, use_numba=True):
         return _get_permutation_test_block(stat_func, use_numba)
     else:
         raise ValueError(f"pairing '{pairing}' is not valid. Available: None, 'paired', 'block'.")
-        
- permutation_test_mean = get_permutation_test(np.mean)
- permutation_test_mean = get_permutation_test(np.median)
- permutation_test_paired_mean = get_permutation_test(np.mean, pairing='paired')
- permutation_test_paired_mean = get_permutation_test(np.median, pairing='paired')
- permutation_test_block_mean = get_permutation_test(np.mean, pairing='block')
- permutation_test_block_mean = get_permutation_test(np.median, pairing='block')
- 
- 
- # Permutation test for mean/median of the difference or ratio
+
+permutation_test_mean = get_permutation_test(np.mean)
+permutation_test_mean = get_permutation_test(np.median)
+permutation_test_paired_mean = get_permutation_test(np.mean, pairing='paired')
+permutation_test_paired_mean = get_permutation_test(np.median, pairing='paired')
+permutation_test_block_mean = get_permutation_test(np.mean, pairing='block')
+permutation_test_block_mean = get_permutation_test(np.median, pairing='block')
+
+
+## Permutation test for mean/median of the difference or ratio
  
 @njit
 def permutation_test_paired_diffmean(X1, X2, R=int(1e5)-1, alternative="two-sided", tolerance=1.5e-8, seed=0):
