@@ -2,6 +2,7 @@ from numba import njit
 import numpy as np
 import pandas as pd
 import math
+import warnings
 from . import bootstrap
 try:
     import statsmodels.stats.api as sms
@@ -100,19 +101,39 @@ def ci_percentile_equal_tailed(x, p, alpha=0.05, alternative='two-sided'):
     p_below_percentile = binom_cdf(np.arange(n+1))
     
     if alternative == 'two-sided':
-        l = np.where(p_below_percentile <= alpha/2)[0][-1] + 1 
-        u = np.where(p_below_percentile >= (1- alpha/2))[0][0] - 1
+        lows = np.where(p_below_percentile <= alpha/2)[0]
+        if lows.size > 0:
+            l = lows[-1] + 1 
+        else:
+            warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
+            return np.sort(x)[[0, -1]], [0, 1], [0, 1]
+        uppers = np.where(p_below_percentile >= (1- alpha/2))[0]
+        if uppers.size > 0:
+            u = uppers[0] - 1
+        else:
+            warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
+            return np.sort(x)[[0, -1]], [0, 1], [0, 1]
         ci_equal_tailed = [l, u]
         quantiles = p_below_percentile[[l-1, u+1]] # p(X < l) = p(x <= l-1) = cdf(l-1)
         CI_prob = np.array([l, u+1]) / n # add 1 to both endpoints (indexing in python starts at 0)
         CI = np.sort(x)[ci_equal_tailed]
     elif alternative == 'less':
-        u = np.where(p_below_percentile >= (1- alpha))[0][0]
+        uppers = np.where(p_below_percentile >= (1-alpha))[0]
+        if uppers.size > 0:
+            u = uppers[0]
+        else:
+            warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
+            return np.array([-np.inf, x.max()]), [0, 1], [0, 1]
         quantiles = p_below_percentile[u]
         CI = np.array([-np.inf, np.sort(x)[u]])
         CI_prob = (u+1) / n
     elif alternative == 'greater':
-        l = np.where(p_below_percentile <= alpha)[0][-1]
+        lows = np.where(p_below_percentile <= alpha/2)[0]
+        if lows.size > 0:
+            l = lows[-1]
+        else:
+            warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
+            return np.array([x.min(), np.inf]), [0, 1], [0, 1]
         quantiles = p_below_percentile[l]
         CI = np.array([np.sort(x)[l], np.inf])
         CI_prob = l / n
