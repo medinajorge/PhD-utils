@@ -112,7 +112,7 @@ def ci_percentile_equal_tailed(x, p, alpha=0.05, alternative='two-sided'):
             u = uppers[0] - 1
         else:
             warnings.warn('n is too small to warrantee an exact upper end other than the maximum.', RuntimeWarning)
-            return u = -1
+            u = -1
         ci_equal_tailed = [l, u]
         if l == 0:
             q0 = 0
