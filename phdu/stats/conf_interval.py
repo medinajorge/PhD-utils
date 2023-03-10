@@ -97,7 +97,7 @@ def ci_percentile_equal_tailed(x, p, alpha=0.05, alternative='two-sided'):
         except:
             raise ImportError('scipy not found. Please install it for n > 500. Alternatively, use the normal aproximation for the binomial.')          
     
-    p_below_percentile = binom_cdf(np.arange(n))
+    p_below_percentile = binom_cdf(np.arange(n+1))
     
     if alternative == 'two-sided':
         l = np.where(p_below_percentile <= alpha/2)[0][-1] + 1 

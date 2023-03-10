@@ -492,6 +492,8 @@ def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([
     Returns: dataframe with index=N_values, columns=[low_fails, high_fails, power].
     """
     n = data.shape[0]
+    if n not in N_values:
+        N_values = np.sort(np.hstack((n, N_values)))
     base = statistic(data)
     se_estimate = np.sqrt(np.diag(cov(resample_nb(data, statistic, seed=seed, R=R_se, output_len=output_len), 
                                       base,
