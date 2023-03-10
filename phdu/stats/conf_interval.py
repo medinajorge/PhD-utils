@@ -105,17 +105,29 @@ def ci_percentile_equal_tailed(x, p, alpha=0.05, alternative='two-sided'):
         if lows.size > 0:
             l = lows[-1] + 1 
         else:
-            warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
-            return np.sort(x)[[0, -1]], [0, 1], [0, 1]
+            warnings.warn('n is too small to warrantee an exact lower bound other than the minimum.', RuntimeWarning)
+            l = 0
         uppers = np.where(p_below_percentile >= (1- alpha/2))[0]
         if uppers.size > 0:
             u = uppers[0] - 1
         else:
-            warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
-            return np.sort(x)[[0, -1]], [0, 1], [0, 1]
+            warnings.warn('n is too small to warrantee an exact upper end other than the maximum.', RuntimeWarning)
+            return u = -1
         ci_equal_tailed = [l, u]
-        quantiles = p_below_percentile[[l-1, u+1]] # p(X < l) = p(x <= l-1) = cdf(l-1)
-        CI_prob = np.array([l, u+1]) / n # add 1 to both endpoints (indexing in python starts at 0)
+        if l == 0:
+            q0 = 0
+            CI_prob0 = 0
+        else:
+            q0 = p_below_percentile[l-1] #  p(X < l) = p(x <= l-1) = cdf(l-1)
+            CI_prob0 = l/n # add 1 to both endpoints (indexing in python starts at 0)
+        if u == -1:
+            q1 = 1
+            CI_prob1 = 1
+        else:
+            q1 = p_below_percentile[u+1]
+            CI_prob1 = (u+1) / n # add 1 to both endpoints (indexing in python starts at 0)
+        quantiles = np.array([q0, q1]) 
+        CI_prob = np.array([CI_prob0, CI_prob1])
         CI = np.sort(x)[ci_equal_tailed]
     elif alternative == 'less':
         uppers = np.where(p_below_percentile >= (1-alpha))[0]
