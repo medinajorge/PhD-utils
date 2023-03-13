@@ -85,71 +85,75 @@ def ci_percentile_equal_tailed(x, p, alpha=0.05, alternative='two-sided'):
     https://online.stat.psu.edu/stat415/book/export/html/835
     """
     n = x.size
-    if n < 500:    
-        def binom_cdf(x): 
-            return np.array([math.comb(n, k) * p**k * (1-p)**(n-k) for k in range(x+1)]).sum()
-        binom_cdf = np.vectorize(binom_cdf)
-        #def binom_pmf(x):    
-        #    return math.comb(n, x) * p**x * (1-p)**(n-x)
+    if n <= 2:
+        warnings.warn(f"n = {n} is too small. Returning NaN", RuntimeWarning)
+        return np.NaN
     else:
-        try:
-            from scipy.stats import binom
-            binom_cdf = lambda x: binom.cdf(x, n, p)
-        except:
-            raise ImportError('scipy not found. Please install it for n > 500. Alternatively, use the normal aproximation for the binomial.')          
-    
-    p_below_percentile = binom_cdf(np.arange(n+1))
-    
-    if alternative == 'two-sided':
-        lows = np.where(p_below_percentile <= alpha/2)[0]
-        if lows.size > 0:
-            l = lows[-1] + 1 
+        if n < 500:    
+            def binom_cdf(x): 
+                return np.array([math.comb(n, k) * p**k * (1-p)**(n-k) for k in range(x+1)]).sum()
+            binom_cdf = np.vectorize(binom_cdf)
+            #def binom_pmf(x):    
+            #    return math.comb(n, x) * p**x * (1-p)**(n-x)
         else:
-            warnings.warn('n is too small to warrantee an exact lower bound other than the minimum.', RuntimeWarning)
-            l = 0
-        uppers = np.where(p_below_percentile >= (1- alpha/2))[0]
-        if uppers.size > 0:
-            u = uppers[0] - 1
-        else:
-            warnings.warn('n is too small to warrantee an exact upper end other than the maximum.', RuntimeWarning)
-            u = -1
-        ci_equal_tailed = [l, u]
-        if l == 0:
-            q0 = 0
-            CI_prob0 = 0
-        else:
-            q0 = p_below_percentile[l-1] #  p(X < l) = p(x <= l-1) = cdf(l-1)
-            CI_prob0 = l/n # add 1 to both endpoints (indexing in python starts at 0)
-        if u == -1:
-            q1 = 1
-            CI_prob1 = 1
-        else:
-            q1 = p_below_percentile[u+1]
-            CI_prob1 = (u+1) / n # add 1 to both endpoints (indexing in python starts at 0)
-        quantiles = np.array([q0, q1]) 
-        CI_prob = np.array([CI_prob0, CI_prob1])
-        CI = np.sort(x)[ci_equal_tailed]
-    elif alternative == 'less':
-        uppers = np.where(p_below_percentile >= (1-alpha))[0]
-        if uppers.size > 0:
-            u = uppers[0]
-        else:
-            warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
-            return np.array([-np.inf, x.max()]), [0, 1], [0, 1]
-        quantiles = p_below_percentile[u]
-        CI = np.array([-np.inf, np.sort(x)[u]])
-        CI_prob = (u+1) / n
-    elif alternative == 'greater':
-        lows = np.where(p_below_percentile <= alpha/2)[0]
-        if lows.size > 0:
-            l = lows[-1]
-        else:
-            warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
-            return np.array([x.min(), np.inf]), [0, 1], [0, 1]
-        quantiles = p_below_percentile[l]
-        CI = np.array([np.sort(x)[l], np.inf])
-        CI_prob = l / n
-    return CI, CI_prob, quantiles
+            try:
+                from scipy.stats import binom
+                binom_cdf = lambda x: binom.cdf(x, n, p)
+            except:
+                raise ImportError('scipy not found. Please install it for n > 500. Alternatively, use the normal aproximation for the binomial.')       
+        
+        p_below_percentile = binom_cdf(np.arange(n+1))
+        
+        if alternative == 'two-sided':
+            lows = np.where(p_below_percentile <= alpha/2)[0]
+            if lows.size > 0:
+                l = lows[-1] + 1 
+            else:
+                warnings.warn('n is too small to warrantee an exact lower bound other than the minimum.', RuntimeWarning)
+                l = 0
+            uppers = np.where(p_below_percentile >= (1- alpha/2))[0]
+            if uppers.size > 0:
+                u = uppers[0] - 1
+            else:
+                warnings.warn('n is too small to warrantee an exact upper end other than the maximum.', RuntimeWarning)
+                u = -1
+            ci_equal_tailed = [l, u]
+            if l == 0:
+                q0 = 0
+                CI_prob0 = 0
+            else:
+                q0 = p_below_percentile[l-1] #  p(X < l) = p(x <= l-1) = cdf(l-1)
+                CI_prob0 = l/n # add 1 to both endpoints (indexing in python starts at 0)
+            if u == -1:
+                q1 = 1
+                CI_prob1 = 1
+            else:
+                q1 = p_below_percentile[u+1]
+                CI_prob1 = (u+1) / n # add 1 to both endpoints (indexing in python starts at 0)
+            quantiles = np.array([q0, q1]) 
+            CI_prob = np.array([CI_prob0, CI_prob1])
+            CI = np.sort(x)[ci_equal_tailed]
+        elif alternative == 'less':
+            uppers = np.where(p_below_percentile >= (1-alpha))[0]
+            if uppers.size > 0:
+                u = uppers[0]
+            else:
+                warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
+                return np.array([-np.inf, x.max()]), [0, 1], [0, 1]
+            quantiles = p_below_percentile[u]
+            CI = np.array([-np.inf, np.sort(x)[u]])
+            CI_prob = (u+1) / n
+        elif alternative == 'greater':
+            lows = np.where(p_below_percentile <= alpha/2)[0]
+            if lows.size > 0:
+                l = lows[-1]
+            else:
+                warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
+                return np.array([x.min(), np.inf]), [0, 1], [0, 1]
+            quantiles = p_below_percentile[l]
+            CI = np.array([np.sort(x)[l], np.inf])
+            CI_prob = l / n
+        return CI, CI_prob, quantiles
 
 
 def _exact_ci_percentile(x, p, alpha=0.05, alternative='two-sided', d_alpha=0.005):

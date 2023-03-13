@@ -405,22 +405,27 @@ def CI_studentized(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sid
     return CI
 
 def CI_percentile(data, statistic, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', **kwargs):
-    sample_stat = statistic(data)
-    if hasattr(sample_stat, "__len__"):
-        output_len = len(sample_stat)
+    n = data.shape[0]
+    if n <= 2:
+        warnings.warn(f"n = {n} is too small. Returning NaN", RuntimeWarning)
+        return np.NaN
     else:
-        output_len = 1
-    boot_sample = resample_nb(data, statistic, R=R, smooth=smooth, output_len=output_len, **kwargs)
-    alpha_ptg = alpha*100
-    if alternative == 'two-sided':
-        CI = np.percentile(boot_sample, [alpha_ptg/2, 100 - alpha_ptg/2], axis=0).T
-    elif alternative == 'less':
-        CI = np.vstack((-np.inf * np.ones((output_len)), np.percentile(boot_sample, 100-alpha_ptg, axis=0))).T
-    elif alternative == 'greater':
-        CI = np.vstack((np.percentile(boot_sample, alpha_ptg, axis=0), np.inf * np.ones((output_len)))).T
-    else:
-        raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
-    return CI
+        sample_stat = statistic(data)
+        if hasattr(sample_stat, "__len__"):
+            output_len = len(sample_stat)
+        else:
+            output_len = 1
+        boot_sample = resample_nb(data, statistic, R=R, smooth=smooth, output_len=output_len, **kwargs)
+        alpha_ptg = alpha*100
+        if alternative == 'two-sided':
+            CI = np.percentile(boot_sample, [alpha_ptg/2, 100 - alpha_ptg/2], axis=0).T
+        elif alternative == 'less':
+            CI = np.vstack((-np.inf * np.ones((output_len)), np.percentile(boot_sample, 100-alpha_ptg, axis=0))).T
+        elif alternative == 'greater':
+            CI = np.vstack((np.percentile(boot_sample, alpha_ptg, axis=0), np.inf * np.ones((output_len)))).T
+        else:
+            raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
+        return CI
 
 def CI_all(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sided', coverage_iters=int(1e5), coverage_seed=42, avg_len=3, exclude=['studentized_vs', 'studentized_vs_smooth']):
     """
