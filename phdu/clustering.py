@@ -62,13 +62,13 @@ def hierarchical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1,
         set_multicategory_from_df(fig, df_ordered)
     return fig
 
-def corr_cluster_matrix(df, corr='spearman', **kwargs):
+def corr_cluster_matrix(df, corr='spearman', absolute_value=False, **kwargs):
     """"
-    corr:  spearman, pearson, spearman-abs, pearson-abs.
+    corr:  spearman, pearson.
     """
-    if 'abs' in corr:
-        corr = corr.replace("-abs", "")
-        df_corr = df.corr(corr).abs()
-    else:
-        df_corr = df.corr(corr)
-    return hierarchical_cluster_matrix(df_corr, corr.capitalize(), **kwargs)
+    df_corr = df.corr(corr)
+    title = corr.capitalize()
+    if absolute_value:
+        df_corr = df_corr.abs()
+        title = f"|{title}|"
+    return hierarchical_cluster_matrix(df_corr, title, **kwargs)
