@@ -49,7 +49,7 @@ def hierarchy_dendrogram(X, fontsize=30, out='data'):
         raise ValueError(f"out '{out}' not valid. Available: 'data', 'fig'.")
     
 
-def hierarhical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1, cmax=1):
+def hierarchical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1, cmax=1):
     _, dendro = hierarchy_dendrogram(df)
     order = dendro["leaves"]
     #corr = X.corr() if isinstance(X, pd.core.frame.DataFrame) else np.corrcoef(X)
@@ -63,4 +63,12 @@ def hierarhical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1, 
     return fig
 
 def corr_cluster_matrix(df, corr='spearman', **kwargs):
-    return hierarchical_cluster_matrix(df.corr(corr), corr.capitalize(), **kwargs)
+    """"
+    corr:  spearman, pearson, spearman-abs, pearson-abs.
+    """
+    if 'abs' in corr:
+        corr = corr.replace("-abs", "")
+        df_corr = df.corr(corr).abs()
+    else:
+        df_corr = df.corr(corr)
+    return hierarchical_cluster_matrix(df_corr, corr.capitalize(), **kwargs)
