@@ -5,6 +5,7 @@ Includes:
     - Importance of each feature (how much each feature contributes to the PCA variance explained)
     - PCA components visualization in 2D.
 """
+import numpy as np
 try:
     from sklearn.decomposition import PCA
     from sklearn.preprocessing import StandardScaler
