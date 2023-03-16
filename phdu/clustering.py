@@ -49,12 +49,12 @@ def hierarchy_dendrogram(X, fontsize=30, out='data'):
         raise ValueError(f"out '{out}' not valid. Available: 'data', 'fig'.")
     
 
-def hierarchical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1, cmax=1):
+def hierarchical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1, cmax=1, cmap='inferno'):
     _, dendro = hierarchy_dendrogram(df)
     order = dendro["leaves"]
     #corr = X.corr() if isinstance(X, pd.core.frame.DataFrame) else np.corrcoef(X)
     df_ordered = df.iloc[order,:].iloc[:, order]
-    fig = px.imshow(df_ordered)
+    fig = px.imshow(df_ordered, color_continuous_scale=cmap)
     fig.update_layout(margin=dict(l=0, b=30, r=60, t=10, pad=1), xaxis_tickfont_size=ticksize, yaxis_tickfont_size=ticksize,
                       coloraxis=dict(cmin=cmin, cmax=cmax, colorbar=dict(title_text=title, tickfont_size=16, title_font_size=20, x=colorbar_x)),
                       height=800, width=1200, font_size=20, hovermode=False)
