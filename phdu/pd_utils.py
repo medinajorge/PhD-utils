@@ -28,6 +28,24 @@ def latex_table(df, index=False, **kwargs):
     print(formatter(df.to_latex(index=index, column_format=col_format, **kwargs)))
     return
 
+def insert_level_sep(df, row_seps=1, col_seps=1):
+    """
+    Insert NaN rows and cols when the outer level of the MultiIndex changes.
+    Example for three columns with col_seps=1:   c1, c2, c3    =>   c1, NANs, c2, NaNs, c3.
+    
+    This is useful when plotting a matrix and you want to visually separate different groups.
+    """
+    df_c = df.copy()
+    col_levels = df.columns.get_level_values(0).unique() # respect the order
+    row_levels = df.index.get_level_values(0).unique()
+    for l in col_levels[:-1]:
+        for k in range(col_seps):
+            df_c[(l, " "*k)] = np.NaN 
+    for l in row_levels[:-1]:
+        for k in range(row_seps):
+            df_c.loc[(l, " "*k), :] = np.NaN
+    return df_c[col_levels].loc[row_levels]
+
 def expand_sequences(df, dt=1, maxlen=None):
     """
     Input: DataFrame. Each element is an array and all arrays start at the same time and have the same time step dt.
