@@ -2,6 +2,7 @@
 Hierarchical clustering. In the future will include more algorithms
 """
 import pandas as pd
+from .stats import corr
 try:
     from scipy.cluster import hierarchy
     import matplotlib.pyplot as plt
@@ -62,12 +63,12 @@ def hierarchical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1,
         set_multicategory_from_df(fig, df_ordered)
     return fig
 
-def corr_cluster_matrix(df, corr='spearman', absolute_value=False, **kwargs):
+def corr_cluster_matrix(df, method='spearman', alpha=0.05, absolute_value=False, **kwargs):
     """"
     corr:  spearman, pearson.
     """
-    df_corr = df.corr(corr)
-    title = corr.capitalize()
+    df_corr = corr.corr_pruned(df, method=method, alpha=alpha).fillna(0)
+    title = method.capitalize()
     if absolute_value:
         df_corr = df_corr.abs()
         title = f"|{title}|"
