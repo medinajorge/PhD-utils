@@ -58,7 +58,7 @@ def hierarchical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1,
     fig = px.imshow(df_ordered, color_continuous_scale=cmap)
     fig.update_layout(margin=dict(l=0, b=30, r=60, t=10, pad=1), xaxis_tickfont_size=ticksize, yaxis_tickfont_size=ticksize,
                       coloraxis=dict(cmin=cmin, cmax=cmax, colorbar=dict(title_text=title, tickfont_size=16, title_font_size=20, x=colorbar_x)),
-                      height=800, width=1200, font_size=20, hovermode=False)
+                      height=800, width=1000, font_size=20, hovermode=False)
     if isinstance(df.index, pd.core.indexes.multi.MultiIndex):
         set_multicategory_from_df(fig, df_ordered)
     return fig
