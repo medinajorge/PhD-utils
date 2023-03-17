@@ -9,6 +9,7 @@ import pandas as pd
 from numba import njit, boolean
 from itertools import product
 from collections import defaultdict
+from collections.abc import Iterable
 import warnings
 try:
     from scipy.special import ndtri, ndtr
@@ -192,6 +193,44 @@ def _percentile_of_score(a, score, axis, account_equal=False):
     else:
         return (a < score).sum(axis=axis) / B
     
+def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, **kwargs):
+    """
+    Resample using normal resampling if data2 is None.
+    Else uses block resampling with data and data2.
+    """
+    if data2 is None:
+        if data.ndim == 1:
+            data = data[:, None]
+        sample_stat = statistic(data)
+        if hasattr(sample_stat, "__len__"):
+            output_len = len(sample_stat)
+        else:
+            output_len = 1
+        N = data.shape[0]
+        if N < n_min:
+            warnings.warn(f"N={N} < n_min={n_min}. Avoiding computation (returning NaNs) ...")
+            theta_hat_b = None
+        else:
+            resample_func = resample_nb if use_numba else resample
+            theta_hat_b = resample_func(data, statistic, R=R, output_len=output_len, smooth=smooth, **kwargs).squeeze()
+    else:
+        sample_stat = statistic(data, data2)
+        if hasattr(sample_stat, "__len__"):
+            output_len = len(sample_stat)
+        else:
+            output_len = 1
+        total_N = lambda data: np.sum([d.shape[0] for d in data])
+        N = min([total_N(data), total_N(data2)])
+        if N < n_min:
+            warnings.warn(f"N={N} < n_min={n_min}. Avoiding computation (returning NaNs) ...")
+            theta_hat_b = None
+        else:
+            resample_func = resample_block_nb if use_numba else resample_block
+            theta_hat_b = resample_func(data, data2, statistic, R=R, output_len=output_len, **kwargs).squeeze()
+            data = np.hstack(data)
+            data2 = np.hstack(data2)
+    return data, data2, theta_hat_b, sample_stat, N
+    
 def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba=True, n_min=5, **kwargs):
     """If data2 is provided, assumes a block resampling and statistic takes two arguments."""
     if alternative == 'two-sided':
@@ -202,27 +241,11 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
         probs = np.array([alpha, 1])
     else:
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
+        
+    data, data2, theta_hat_b, sample_stat, N = _resample(data, data2, use_numba, statistic, R=R, n_min=n_min, **kwargs)
     
-    if data2 is None:
-        N = data.shape[0]
-        if N < n_min:
-            warnings.warn(f"N={N} < n_min={n_min}. Avoiding computation (returning NaNs) ...")
-            return np.array([np.NaN, np.NaN])
-        else:
-            resample_func = resample_nb if use_numba else resample
-            theta_hat_b = resample_func(data[:,None] if data.ndim == 1 else data,
-                                        statistic, R=R, **kwargs).squeeze()
-    else:
-        total_N = lambda data: np.sum([d.shape[0] for d in data])
-        N = min([total_N(data), total_N(data2)])
-        if N < n_min:
-            warnings.warn(f"N={N} < n_min={n_min}. Avoiding computation (returning NaNs) ...")
-            return np.array([np.NaN, np.NaN])
-        else:
-            resample_func = resample_block_nb if use_numba else resample_block
-            theta_hat_b = resample_func(data, data2, statistic, R=R, **kwargs).squeeze()
-            data = np.hstack(data)
-            data2 = np.hstack(data2)
+    if theta_hat_b is None:
+        return np.array([np.NaN, np.NaN])
         
     alpha_bca = _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba)[0]
     
@@ -233,12 +256,14 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
         else:
             sample_stat = statistic(data, data2)
         return np.array([sample_stat, sample_stat])
-    elif alternative == 'two-sided':
-        return  np.percentile(theta_hat_b, alpha_bca*100, axis=0)
-    elif alternative == 'less':
-         return np.array([-np.inf, np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0)])
-    elif alternative == 'greater':
-        return np.array([np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0), np.inf])
+    else:
+        return _compute_CI_percentile(theta_hat_b, alpha_bca, alternative)
+    #elif alternative == 'two-sided':
+    #    return  np.percentile(theta_hat_b, alpha_bca*100, axis=0)
+    #elif alternative == 'less':
+    #     return np.array([-np.inf, np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0)])
+    #elif alternative == 'greater':
+    #    return np.array([np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0), np.inf])
     
 def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba):
     """Bias-corrected and accelerated interval."""
@@ -404,28 +429,34 @@ def CI_studentized(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sid
         CI = compute_CI_studentized(base, results, studentized_results, alpha=alpha, alternative=alternative)
     return CI
 
-def CI_percentile(data, statistic, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', **kwargs):
-    n = data.shape[0]
-    if n <= 2:
-        warnings.warn(f"n = {n} is too small. Returning NaN", RuntimeWarning)
-        return np.NaN
+def _compute_CI_percentile(boot_sample, alpha, alternative):
+    alpha_iter = isinstance(alpha, Iterable)
+    if alpha_iter:
+        alpha = np.asarray(alpha)
+        if alpha.sum() < 1.1:
+            alpha_ptg = alpha * 100
+        else:
+            alpha_ptg = alpha
     else:
-        sample_stat = statistic(data)
-        if hasattr(sample_stat, "__len__"):
-            output_len = len(sample_stat)
-        else:
-            output_len = 1
-        boot_sample = resample_nb(data, statistic, R=R, smooth=smooth, output_len=output_len, **kwargs)
-        alpha_ptg = alpha*100
-        if alternative == 'two-sided':
-            CI = np.percentile(boot_sample, [alpha_ptg/2, 100 - alpha_ptg/2], axis=0).T
-        elif alternative == 'less':
-            CI = np.vstack((-np.inf * np.ones((output_len)), np.percentile(boot_sample, 100-alpha_ptg, axis=0))).T
-        elif alternative == 'greater':
-            CI = np.vstack((np.percentile(boot_sample, alpha_ptg, axis=0), np.inf * np.ones((output_len)))).T
-        else:
-            raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
-        return CI
+        alpha_ptg = alpha*100 if alpha < 1 else alpha
+    
+    output_len = boot_sample.shape[1]
+    if alternative == 'two-sided':
+        CI = np.percentile(boot_sample, alpha_ptg if alpha_iter else [alpha_ptg/2, 100 - alpha_ptg/2], axis=0).T
+    elif alternative == 'less':
+        CI = np.vstack((-np.inf * np.ones((output_len)), np.percentile(boot_sample, alpha_ptg[0] if alpha_iter else 100-alpha_ptg, axis=0))).T
+    elif alternative == 'greater':
+        CI = np.vstack((np.percentile(boot_sample, alpha_ptg[0] if alpha_iter else alpha_ptg, axis=0), np.inf * np.ones((output_len)))).T
+    else:
+        raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
+    return CI
+
+def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=3, use_numba=True, **kwargs):
+    data, data2, boot_sample, sample_stat, N = _resample(data, data2, use_numba, statistic, R=R, n_min=n_min, smooth=smooth, **kwargs)
+    if boot_sample is None:
+        return np.array([np.NaN, np.NaN])
+    else:    
+        return _compute_CI_percentile(boot_sample, alpha, alternative)
 
 def CI_all(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sided', coverage_iters=int(1e5), coverage_seed=42, avg_len=3, exclude=['studentized_vs', 'studentized_vs_smooth']):
     """
