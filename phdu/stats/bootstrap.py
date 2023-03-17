@@ -214,7 +214,7 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, **kwa
             resample_func = resample_nb if use_numba else resample
             theta_hat_b = resample_func(data, statistic, R=R, output_len=output_len, smooth=smooth, **kwargs).squeeze()
     else:
-        sample_stat = statistic(data, data2)
+        sample_stat = statistic(np.hstack(data), np.hstack(data2))
         if hasattr(sample_stat, "__len__"):
             output_len = len(sample_stat)
         else:
