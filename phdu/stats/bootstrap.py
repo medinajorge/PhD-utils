@@ -207,7 +207,7 @@ def _percentile_of_score(a, score, axis, account_equal=False):
     else:
         return (a < score).sum(axis=axis) / B
     
-def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, **kwargs):
+def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, stack_data=True, **kwargs):
     """
     Resample using normal resampling if data2 is None.
     Else uses block resampling with data and data2.
@@ -228,7 +228,10 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, **kwa
             resample_func = resample_nb if use_numba else resample
             theta_hat_b = resample_func(data, statistic, R=R, output_len=output_len, smooth=smooth, **kwargs).squeeze()
     else:
-        sample_stat = statistic(np.hstack(data), np.hstack(data2))
+        if stack_data:
+            sample_stat = statistic(np.hstack(data), np.hstack(data2))
+        else:
+            sample_stat = statistic(data, data2)
         if hasattr(sample_stat, "__len__"):
             output_len = len(sample_stat)
         else:
@@ -240,9 +243,10 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, **kwa
             theta_hat_b = None
         else:
             resample_func = resample_block_nb if use_numba else resample_block
-            theta_hat_b = resample_func(data, data2, statistic, R=R, output_len=output_len, **kwargs).squeeze()
-            data = np.hstack(data)
-            data2 = np.hstack(data2)
+            theta_hat_b = resample_func(data, data2, statistic, R=R, output_len=output_len, stack_data=stack_data, **kwargs).squeeze()
+            if stack_data:
+                data = np.hstack(data)
+                data2 = np.hstack(data2)
     return data, data2, theta_hat_b, sample_stat, N
     
 def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba=True, n_min=5, **kwargs):
