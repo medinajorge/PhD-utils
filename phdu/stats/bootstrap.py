@@ -82,7 +82,14 @@ def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
     return boot_sample
 
 @njit
-def resample_block_nb(X, Y, func, output_len=1, R=int(1e5), seed=0, stack_data=True, aggregator=np.mean):
+def _nb_mean(x):
+    """
+    njit version of numpy mean.
+    """
+    return np.mean(x)
+
+@njit
+def resample_block_nb(X, Y, func, output_len=1, R=int(1e5), seed=0, stack_data=True, aggregator=_nb_mean):
     """
     X, Y:         ragged arrays or tuples. Each element is an array containing the data for a block. 
     func:         numba function f: X,Y  ->  Z,   Z: 1D array of size output_len.
@@ -241,7 +248,11 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, **kwa
 def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba=True, n_min=5, **kwargs):
     """
     If data2 is provided, assumes a block resampling and statistic takes two arguments.
-    Optional kwargs for aggregating data, data2 before computing the statistic: stack_data=False, aggregator=np.mean (example)
+    Optional kwargs for aggregating data, data2 before computing the statistic:
+            stack_data = False, 
+            aggregator = @njit
+                         def nb_mean(x):
+                             return np.mean(x)
     """
     if alternative == 'two-sided':
         probs = np.array([alpha/2, 1 - alpha/2])
@@ -466,7 +477,11 @@ def _compute_CI_percentile(boot_sample, alpha, alternative):
 def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=3, use_numba=True, **kwargs):
     """
     If data2 is provided, assumes a block resampling and statistic takes two arguments.
-    Optional kwargs for aggregating data, data2 before computing the statistic: stack_data=False, aggregator=np.mean (example)
+    Optional kwargs for aggregating data, data2 before computing the statistic:
+            stack_data = False, 
+            aggregator = @njit
+                         def nb_mean(x):
+                             return np.mean(x)
     """
     data, data2, boot_sample, sample_stat, N = _resample(data, data2, use_numba, statistic, R=R, n_min=n_min, smooth=smooth, **kwargs)
     if boot_sample is None:
