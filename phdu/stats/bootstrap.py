@@ -82,10 +82,11 @@ def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
     return boot_sample
 
 @njit
-def resample_block_nb(X, Y, func, output_len=1, R=int(1e5), seed=0):
+def resample_block_nb(X, Y, func, output_len=1, R=int(1e5), seed=0, stack_data=True, aggregator=np.mean):
     """
-    X, Y:   ragged arrays or tuples. Each element is an array containing the data for a block. 
-    func:   numba function f: X,Y  ->  Z,   Z: 1D array of size output_len.
+    X, Y:         ragged arrays or tuples. Each element is an array containing the data for a block. 
+    func:         numba function f: X,Y  ->  Z,   Z: 1D array of size output_len.
+    aggregator:   numba function for aggregating data from a block.
     """
     np.random.seed(seed)
     def stack(arr_list):
@@ -99,10 +100,16 @@ def resample_block_nb(X, Y, func, output_len=1, R=int(1e5), seed=0):
     Y_resampled = [y[idxs_resampling].reshape(R, n) for y, n, idxs_resampling in zip(Y, n_y, idxs_resampling_y)]
     
     boot_sample = np.empty((R, output_len))
-    for i in range(R):
-        Xi = stack([x[i] for x in X_resampled])
-        Yi = stack([y[i] for y in Y_resampled])
-        boot_sample[i] = func(Xi, Yi)
+    if stack_data:
+        for i in range(R):
+            Xi = stack([x[i] for x in X_resampled])
+            Yi = stack([y[i] for y in Y_resampled])
+            boot_sample[i] = func(Xi, Yi)
+    else:
+        for i in range(R):
+            Xi = np.array([aggregator(x[i]) for x in X_resampled])
+            Yi = np.array([aggregator(y[i]) for y in Y_resampled])
+            boot_sample[i] = func(Xi, Yi)
     return boot_sample
 
 def resample(X, func, output_len=1, R=int(1e4), seed=0):
@@ -232,7 +239,10 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, **kwa
     return data, data2, theta_hat_b, sample_stat, N
     
 def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba=True, n_min=5, **kwargs):
-    """If data2 is provided, assumes a block resampling and statistic takes two arguments."""
+    """
+    If data2 is provided, assumes a block resampling and statistic takes two arguments.
+    Optional kwargs for aggregating data, data2 before computing the statistic: stack_data=False, aggregator=np.mean (example)
+    """
     if alternative == 'two-sided':
         probs = np.array([alpha/2, 1 - alpha/2])
     elif alternative == 'less':
@@ -454,6 +464,10 @@ def _compute_CI_percentile(boot_sample, alpha, alternative):
     return CI
 
 def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=3, use_numba=True, **kwargs):
+    """
+    If data2 is provided, assumes a block resampling and statistic takes two arguments.
+    Optional kwargs for aggregating data, data2 before computing the statistic: stack_data=False, aggregator=np.mean (example)
+    """
     data, data2, boot_sample, sample_stat, N = _resample(data, data2, use_numba, statistic, R=R, n_min=n_min, smooth=smooth, **kwargs)
     if boot_sample is None:
         return np.array([np.NaN, np.NaN])
