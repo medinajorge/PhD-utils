@@ -207,7 +207,7 @@ def _percentile_of_score(a, score, axis, account_equal=False):
     else:
         return (a < score).sum(axis=axis) / B
     
-def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, stack_data=True, **kwargs):
+def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, stack_data=True, aggregator=_nb_mean, **kwargs):
     """
     Resample using normal resampling if data2 is None.
     Else uses block resampling with data and data2.
@@ -231,7 +231,7 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, stack
         if stack_data:
             sample_stat = statistic(np.hstack(data), np.hstack(data2))
         else:
-            sample_stat = statistic(data, data2)
+            sample_stat = statistic(np.array([aggregator(di) for di in data]), np.array([aggregator(di) for di in data2]))
         if hasattr(sample_stat, "__len__"):
             output_len = len(sample_stat)
         else:
@@ -243,7 +243,7 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, stack
             theta_hat_b = None
         else:
             resample_func = resample_block_nb if use_numba else resample_block
-            theta_hat_b = resample_func(data, data2, statistic, R=R, output_len=output_len, stack_data=stack_data, **kwargs).squeeze()
+            theta_hat_b = resample_func(data, data2, statistic, R=R, output_len=output_len, stack_data=stack_data, aggregator=aggregator, **kwargs).squeeze()
             if stack_data:
                 data = np.hstack(data)
                 data2 = np.hstack(data2)
