@@ -165,10 +165,10 @@ def CI_ss_plot(df, label=None, width=0.05, ms=10, ns_color='#323232', ss_color=n
     df_ns['CI'] = map_to_nan(cis, significant).tolist()
     df_ss['CI'] = map_to_nan(cis, ~significant).tolist()
     # NS intervals
-    fig = CI_plot(df_ns.index, df_ns['sample stat'].values, np.vstack(df_ns['CI'].values), width=0.2, y_title=r'$\Huge{}'.format(ylabel[1:]), color=color_std(ns_color, opacity=0.55),
+    fig = CI_plot(df_ns.index, df_ns['sample stat'].values, np.vstack(df_ns['CI'].values), width=width, ms=ms, color=color_std(ns_color, opacity=0.55),
                   **CI_plot_kwargs)
     # Adding significant intervals
-    CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=0.2, fig=fig, color=color_std(ss_color, opacity=0.2))
+    fig = CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=width, ms=ms, fig=fig, color=color_std(ss_color, opacity=0.2))
     # colorizing the index
     def colorize(index):
         """
