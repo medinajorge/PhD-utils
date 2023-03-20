@@ -136,21 +136,21 @@ def ci_percentile_equal_tailed(x, p, alpha=0.05, alternative='two-sided'):
         elif alternative == 'less':
             uppers = np.where(p_below_percentile >= (1-alpha))[0]
             if uppers.size > 0:
-                u = min(uppers[0], uppers.size - 1)
+                u = min(uppers[0] - 1, x.size - 1)
             else:
                 warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
                 return np.array([-np.inf, x.max()]), [0, 1], [0, 1]
-            quantiles = p_below_percentile[u]
+            quantiles = p_below_percentile[u+1]
             CI = np.array([-np.inf, np.sort(x)[u]])
             CI_prob = (u+1) / n
         elif alternative == 'greater':
-            lows = np.where(p_below_percentile <= alpha/2)[0]
+            lows = np.where(p_below_percentile <= alpha)[0]
             if lows.size > 0:
-                l = lows[-1]
+                l = lows[-1] + 1
             else:
                 warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
                 return np.array([x.min(), np.inf]), [0, 1], [0, 1]
-            quantiles = p_below_percentile[l]
+            quantiles = p_below_percentile[l-1]
             CI = np.array([np.sort(x)[l], np.inf])
             CI_prob = l / n
         return CI, CI_prob, quantiles
