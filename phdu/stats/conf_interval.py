@@ -136,7 +136,7 @@ def ci_percentile_equal_tailed(x, p, alpha=0.05, alternative='two-sided'):
         elif alternative == 'less':
             uppers = np.where(p_below_percentile >= (1-alpha))[0]
             if uppers.size > 0:
-                u = uppers[0]
+                u = min(uppers[0], uppers.size - 1)
             else:
                 warnings.warn('n is too small to warrantee an exact CI other than the full range of the data.', RuntimeWarning)
                 return np.array([-np.inf, x.max()]), [0, 1], [0, 1]
