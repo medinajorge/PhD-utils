@@ -136,13 +136,53 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
         fig.add_trace(go.Scatter(x=[x_val]*2, y=ci[::-1], showlegend=False, mode="markers",
                                  marker=dict(color=color, symbol=["arrow-bar-down", "arrow-bar-up"], size=ms, line=dict(color="gray", width=2))
                                 ))
-        fig.add_shape(type="rect", xref="x", yref="y", line=dict(color="gray",width=3), fillcolor=color, x0=i-width, y0=ci[0], x1=i+width, y1=ci[1])
+        if not np.isnan(ci).all():
+            fig.add_shape(type="rect", xref="x", yref="y", line=dict(color="gray",width=3), fillcolor=color, x0=i-width, y0=ci[0], x1=i+width, y1=ci[1])
         fig.add_shape(type="line", xref="x", yref="y", line=dict(color="gray", width=4),  x0=i-width, y0=ci_stat, x1=i+width, y1=ci_stat)
     if label is not None:
         yrange = [*get_common_range(fig, axes=["y"]).values()][0]
         fig.add_trace(go.Scatter(x=[1000], y=[1000], mode="markers", name=label, showlegend=True,
                                  marker=dict(symbol="square", color=color, size=22), line=dict(color="gray", width=2)))
         fig.update_layout(**mod_range(fig, ([-0.25, len(x)-0.75], yrange)))
+    return fig
+
+def CI_ss_plot(df, label=None, width=0.05, ms=10, ns_color='#323232', ss_color=next(plotly_default_colors()), **CI_plot_kwargs):
+    """
+    df: Dataframe containing the x coordinate in the index
+        and columns:
+            - 'sample stat': sample statistic
+            - 'CI':          confidence interval
+            - 'lb':          lower bound
+            - 'ub':          upper bound
+    """
+    def map_to_nan(x, bool_arr):
+        y = x.copy()
+        y[bool_arr] = np.NaN
+        return y
+    significant = np.sign(df['lb']) == np.sign(df['ub'])
+    df_ns, df_ss = df.copy(), df.copy()
+    cis = np.vstack(df.CI.values)
+    df_ns['CI'] = map_to_nan(cis, significant).tolist()
+    df_ss['CI'] = map_to_nan(cis, ~significant).tolist()
+    # NS intervals
+    fig = CI_plot(df_ns.index, df_ns['sample stat'].values, np.vstack(df_ns['CI'].values), width=0.2, y_title=r'$\Huge{}'.format(ylabel[1:]), color=color_std(ns_color, opacity=0.55),
+                  **CI_plot_kwargs)
+    # Adding significant intervals
+    CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=0.2, fig=fig, color=color_std(ss_color, opacity=0.2))
+    # colorizing the index
+    def colorize(index):
+        """
+        index: pd.Series where index is the feature name and value is of type bool.
+        """
+        ticktext = []
+        for f, is_ss in index.items():
+            if is_ss:
+                ticktext.append(f"<span style='color:{str(ss_color)}'> {str(f)} </span>")
+            else:
+                ticktext.append(f"<span style='color:{str(ns_color)}'> {str(f)} </span>")
+        return ticktext
+    ticktext = colorize(significant)
+    fig.update_layout(xaxis=dict(tickmode='array', ticktext=ticktext, tickvals=np.arange(significant.size)))
     return fig
 
 def permtest_plot(df, H1="", colorscale="Inferno", log=True, height=800, width=1000, font_size=40, bar_len=0.9, bar_x=0.95, bar_thickness=100):
