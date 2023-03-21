@@ -121,7 +121,7 @@ def set_multicategory_from_df(fig, df):
     fig.data[0]["y"] = multiindex_to_label(df.index)
     return
 
-def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', fig=None, x_title=None, y_title=None):
+def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', fig=None, x_title=None, y_title=None, add_xline=True):
     """
     Box plot where the box corresponds to the CI.
     
@@ -132,6 +132,8 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
     """
     if fig is None:
         fig = get_figure(xaxis_title=x_title, yaxis_title=y_title)
+        if add_xline:
+            fig.add_hline(y=0, line=dict(color='#191919', width=2))
     for i, (ci, x_val, ci_stat) in enumerate(zip(CI, x, y)):
         fig.add_trace(go.Scatter(x=[x_val]*2, y=ci[::-1], showlegend=False, mode="markers",
                                  marker=dict(color=color, symbol=["arrow-bar-down", "arrow-bar-up"], size=ms, line=dict(color="gray", width=2))
@@ -168,7 +170,7 @@ def CI_ss_plot(df, label=None, width=0.05, ms=10, ns_color='#323232', ss_color=n
     fig = CI_plot(df_ns.index, df_ns['sample stat'].values, np.vstack(df_ns['CI'].values), width=width, ms=ms, color=color_std(ns_color, opacity=0.55),
                   **CI_plot_kwargs)
     # Adding significant intervals
-    fig = CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=width, ms=ms, fig=fig, color=color_std(ss_color, opacity=0.2))
+    fig = CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=width, ms=ms, fig=fig, color=color_std(ss_color, opacity=0.2), add_xline=False)
     # colorizing the index
     def colorize(index):
         """
