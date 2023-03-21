@@ -470,6 +470,7 @@ def _compute_CI_percentile(boot_sample, alpha, alternative):
         output_len = boot_sample.shape[1]
     if alternative == 'two-sided':
         CI = np.percentile(boot_sample, alpha_ptg if alpha_iter else [alpha_ptg/2, 100 - alpha_ptg/2], axis=0).T
+        CI = np.atleast_2d(CI)
     elif alternative == 'less':
         CI = np.vstack((-np.inf * np.ones((output_len)), np.percentile(boot_sample, alpha_ptg[0] if alpha_iter else 100-alpha_ptg, axis=0))).T
     elif alternative == 'greater':
