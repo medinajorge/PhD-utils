@@ -133,7 +133,7 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
     if fig is None:
         fig = get_figure(xaxis_title=x_title, yaxis_title=y_title)
         if add_xline:
-            fig.add_hline(y=0, line=dict(color='#191919', width=2))
+            fig.add_hline(y=0, line=dict(color='#191919', width=1))
     for i, (ci, x_val, ci_stat) in enumerate(zip(CI, x, y)):
         fig.add_trace(go.Scatter(x=[x_val]*2, y=ci[::-1], showlegend=False, mode="markers",
                                  marker=dict(color=color, symbol=["arrow-bar-down", "arrow-bar-up"], size=ms, line=dict(color="gray", width=2))
