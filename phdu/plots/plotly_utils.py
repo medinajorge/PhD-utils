@@ -25,13 +25,13 @@ def add_offset(x0, xf, offset=0.05):
     """x0 (xf) == lower (upper) limit for the axis range."""
     inverse_transform = lambda *xs: [(xf-x0)*x + x0 for x in xs]
     return inverse_transform(-offset, 1+offset)
-    
+
 def get_common_range(fig, axes=["x", "y"], offset=[0.05, 0.05]):
     data = defaultdict(list)
     for plot in fig.data:
-        for ax in axes:          
+        for ax in axes:
             if hasattr(plot, f"error_{ax}") and getattr(plot, f"error_{ax}").array is not None:
-                additions = [np.array([*plot[f"error_{ax}"]["array"]]), -np.array([*plot[f"error_{ax}"]["array"]])] 
+                additions = [np.array([*plot[f"error_{ax}"]["array"]]), -np.array([*plot[f"error_{ax}"]["array"]])]
             else:
                 additions = [0]
             for addition in additions:
@@ -52,7 +52,7 @@ def get_nplots(fig):
     return sum(1 for x in fig.layout if "xaxis" in x)
 
 def mod_delete_axes(fig, axes=["x", "y"]):
-    non_visible_axes_specs = dict(visible=False, showgrid=False, zeroline=False) 
+    non_visible_axes_specs = dict(visible=False, showgrid=False, zeroline=False)
     return {f"{ax}axis{i}": non_visible_axes_specs for ax in axes for i in [""] + [*range(1, get_nplots(fig) + 1)]}
 
 def get_mod_layout(key, val=None):
@@ -70,7 +70,7 @@ def get_mod_layout(key, val=None):
 
 mod_dashes           = partial(_helper.sequence_or_stream, ["solid", "dash", "dot"])
 mod_ticksize         = get_mod_layout("tickfont_size")
-mod_logaxes          = get_mod_layout("type", "log") 
+mod_logaxes          = get_mod_layout("type", "log")
 mod_expfmt           = get_mod_layout("exponentformat", "power")
 mod_range            = get_mod_layout("range")
 mod_logaxes_expfmt   = lambda fig, axes=["x", "y"]: {**mod_logaxes(fig, axes=axes), **mod_expfmt(fig, axes=axes)}
@@ -89,15 +89,15 @@ def get_figure(height=800, width=1000, ticksize=32, font_size=40, margin=None, f
     return fig
 
 def get_subplots(cols, rows=1, horizontal_spacing=0.03, vertical_spacing=0.03, height=None, width=2500, ticksize=32, font_size=40, font_family="sans-serif",
-                 hovermode=False, delete_axes=False, shared_xaxes=True, shared_yaxes=True, layout_kwargs={}, 
+                 hovermode=False, delete_axes=False, shared_xaxes=True, shared_yaxes=True, layout_kwargs={},
                  **make_subplots_kwargs):
     height = 800*rows if height is None else height
     fig = make_subplots(figure=go.Figure(layout=dict(margin=dict(l=100, r=20, b=80, t=60, pad=1), height=height, width=width)),
-                        shared_yaxes=shared_yaxes, shared_xaxes=shared_xaxes,                        
+                        shared_yaxes=shared_yaxes, shared_xaxes=shared_xaxes,
                         horizontal_spacing=horizontal_spacing, vertical_spacing=vertical_spacing, rows=rows, cols=cols,
                         **make_subplots_kwargs
                        )
-                    
+
     fig.for_each_annotation(lambda a: a.update(font={'size':font_size, "family":font_family}))
     fig.update_layout(**mod_ticksize(fig, val=ticksize), legend_font_size=font_size, hovermode=hovermode, **layout_kwargs)
     if delete_axes:
@@ -121,10 +121,10 @@ def set_multicategory_from_df(fig, df):
     fig.data[0]["y"] = multiindex_to_label(df.index)
     return
 
-def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', fig=None, x_title=None, y_title=None, add_xline=True):
+def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', fig=None, x_title=None, y_title=None):
     """
     Box plot where the box corresponds to the CI.
-    
+
     Attributes:
         - x:    x coordinate for the CI
         - y:    value of the magnitude for the sample. Example: the mean if CI is a CI for the mean.
@@ -132,8 +132,6 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
     """
     if fig is None:
         fig = get_figure(xaxis_title=x_title, yaxis_title=y_title)
-        if add_xline:
-            fig.add_hline(y=0, line=dict(color='#191919', width=1))
     for i, (ci, x_val, ci_stat) in enumerate(zip(CI, x, y)):
         fig.add_trace(go.Scatter(x=[x_val]*2, y=ci[::-1], showlegend=False, mode="markers",
                                  marker=dict(color=color, symbol=["arrow-bar-down", "arrow-bar-up"], size=ms, line=dict(color="gray", width=2))
@@ -170,7 +168,7 @@ def CI_ss_plot(df, label=None, width=0.05, ms=10, ns_color='#323232', ss_color=n
     fig = CI_plot(df_ns.index, df_ns['sample stat'].values, np.vstack(df_ns['CI'].values), width=width, ms=ms, color=color_std(ns_color, opacity=0.55),
                   **CI_plot_kwargs)
     # Adding significant intervals
-    fig = CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=width, ms=ms, fig=fig, color=color_std(ss_color, opacity=0.2), add_xline=False)
+    fig = CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=width, ms=ms, fig=fig, color=color_std(ss_color, opacity=0.2))
     # colorizing the index
     def colorize(index):
         """
@@ -202,11 +200,11 @@ def permtest_plot(df, H1="", colorscale="Inferno", log=True, height=800, width=1
                       margin=dict(l=0, b=0, t=0, r=0)
                      )
     return fig
-    
+
 def violin(df, CI=None, CI_line="mean", **CI_kwargs):
     """
     Violin plot including optionally the CI.
-    
+
     Attributes:
         - df:   melted DataFrame. Contains only two columns: variable name (x) and value (y).
                                   The column names set the OX and OY labels.
@@ -233,7 +231,7 @@ def rgb_to_text(rgb):
 def p_value_colorscale(base_cs="RdBu_r", out='rgb-text', interpolate=True, step=0.05):
     """
     Colorscale where color difference is proportional to the probability of a type I error.
-    Example: p=0.1 has double probability of type I error than p=0.05. 
+    Example: p=0.1 has double probability of type I error than p=0.05.
              p=0.5 has 10 times the probability of type I error of p=0.05.
     """
     cs_len = int(0.5 / step)
@@ -244,7 +242,7 @@ def p_value_colorscale(base_cs="RdBu_r", out='rgb-text', interpolate=True, step=
         unique_s = np.array(s)[unique_idxs]
         unique_c = np.array(c)[unique_idxs]
         return [[s, c] for s, c in zip(unique_s, unique_c)]
-    
+
     if interpolate:
         cs_interpolated = cl.to_rgb(cl.interp([*zip(*px.colors.get_colorscale("RdBu_r"))][1], 2*cs_len + 1))
         cg_low = [rgb_to_hex(c) for c in cs_interpolated[:cs_len+1]]
@@ -276,4 +274,4 @@ def plot_cs(cs):
         _, c = zip(*cs)
     else:
         c = cs
-    return HTML(cl.to_html(cl.to_hsl(c)))    
+    return HTML(cl.to_html(cl.to_hsl(c)))

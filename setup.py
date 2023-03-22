@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='phdu',
-    version='1.7.b6',
+    version='1.7.b7',
     author="Jorge Medina Hernández",
     author_email='medinahdezjorge@gmail.com',
     packages=find_packages("."),
@@ -13,17 +13,17 @@ setup(
     long_description_content_type='text/markdown',
     keywords=['science', 'statistics', 'tidy', 'project organization', 'project', 'organization', 'path', 'storage'],
     classifiers = [
-        "Programming Language :: Python :: 3",            
+        "Programming Language :: Python :: 3",
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: GNU Affero General Public License v3",
-        "Operating System :: OS Independent",    
+        "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering",
         "Topic :: Office/Business",
         "Intended Audience :: Science/Research",
     ],
     python_requires=">=3",
     install_requires=[
-        'tidypath',     
+        'tidypath',
         'numba',
         'numpy',
         'pandas',
@@ -35,7 +35,7 @@ setup(
         "all": ["matplotlib", "plotly", "kaleido", "statsmodels", "rpy2", "colorlover", "sklearn"],
         "basic": ["matplotlib", "plotly", "kaleido", "colorlover", "sklearn"],
         "matplotlib": "matplotlib",
-        "plotly": ["plotly", "kaleido"],        
+        "plotly": ["plotly", "kaleido"],
         "colorlover": "colorlover",
         'statsmodels': 'statsmodels',
         "r": "rpy2",
