@@ -260,6 +260,10 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, stack
             resample_func = resample_block_nb if use_numba else resample_block
             resample_kwargs = dict(stack_data=stack_data, aggregator=aggregator)
         else:
+            if data.ndim == 1:
+                data = data[:, None]
+            if data2.ndim == 1:
+                data2 = data2[:, None]
             sample_stat = statistic(data, data2)
             N = min([len(data), len(data2)])
             resample_func = resample_twosamples_nb if use_numba else resample_twosamples
