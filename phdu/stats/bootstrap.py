@@ -29,19 +29,19 @@ try:
 except NameError:
     from tqdm import tqdm # Probably runing on standard python terminal.
 
-from ..np_utils import numpy_fill 
+from ..np_utils import numpy_fill
 from ._integration import simpson3oct_vec
 from . import conf_interval
-    
+
 @njit
 def resample_paired_nb(X, Y, func, output_len=1, R=int(1e5), seed=0):
     np.random.seed(seed)
-    N = X.size    
+    N = X.size
     data_paired = np.vstack((X, Y)).T
     idxs_resampling = np.random.randint(low=0, high=N, size=R*N)
-    data_resampled = data_paired[idxs_resampling].reshape(R, N, 2)    
+    data_resampled = data_paired[idxs_resampling].reshape(R, N, 2)
     stat = func(X, Y)
-    
+
     boot_sample = np.empty((R, output_len))
     for i, r in enumerate(data_resampled):
         x, y = r.T
@@ -75,10 +75,31 @@ def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=0):
 def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
     """X: array of shape (N_samples, n_vars)."""
     data_resampled = resample_nb_X(X, R=R, seed=seed, smooth=smooth, N=N)
-    
+
     boot_sample = np.empty((R, output_len))
     for i, r in enumerate(data_resampled):
         boot_sample[i] = func(r)
+    return boot_sample
+
+@njit
+def resample_twosamples_nb(X1, X2, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
+    """Xi: array of shape (N_samples, n_vars)."""
+    data_resampled_1 = resample_nb_X(X1, R=R, seed=seed, smooth=smooth, N=N)
+    data_resampled_2 = resample_nb_X(X2, R=R, seed=seed, smooth=smooth, N=N)
+
+    boot_sample = np.empty((R, output_len))
+    for i, (r1, r2) in enumerate(zip(data_resampled_1, data_resampled_2)):
+        boot_sample[i] = func(r1, r2)
+    return boot_sample
+
+def resample_twosamples(X1, X2, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
+    """Xi: array of shape (N_samples, n_vars)."""
+    data_resampled_1 = resample_nb_X(X1, R=R, seed=seed, smooth=smooth, N=N)
+    data_resampled_2 = resample_nb_X(X2, R=R, seed=seed, smooth=smooth, N=N)
+
+    boot_sample = np.empty((R, output_len))
+    for i, (r1, r2) in enumerate(zip(data_resampled_1, data_resampled_2)):
+        boot_sample[i] = func(r1, r2)
     return boot_sample
 
 @njit
@@ -91,21 +112,21 @@ def _nb_mean(x):
 @njit
 def resample_block_nb(X, Y, func, output_len=1, R=int(1e5), seed=0, stack_data=True, aggregator=_nb_mean):
     """
-    X, Y:         ragged arrays or tuples. Each element is an array containing the data for a block. 
+    X, Y:         ragged arrays or tuples. Each element is an array containing the data for a block.
     func:         numba function f: X,Y  ->  Z,   Z: 1D array of size output_len.
     aggregator:   numba function for aggregating data from a block.
     """
     np.random.seed(seed)
     def stack(arr_list):
         return np.array([a for arr in arr_list for a in arr])
-    
+
     n_x = [len(x) for x in X]
     n_y = [len(y) for y in Y]
     idxs_resampling_x = [np.random.randint(low=0, high=n, size=R*n) for n in n_x]
     idxs_resampling_y = [np.random.randint(low=0, high=n, size=R*n) for n in n_y]
     X_resampled = [x[idxs_resampling].reshape(R, n) for x, n, idxs_resampling in zip(X, n_x, idxs_resampling_x)]
     Y_resampled = [y[idxs_resampling].reshape(R, n) for y, n, idxs_resampling in zip(Y, n_y, idxs_resampling_y)]
-    
+
     boot_sample = np.empty((R, output_len))
     if stack_data:
         for i in range(R):
@@ -125,7 +146,7 @@ def resample(X, func, output_len=1, R=int(1e4), seed=0):
     N = X.shape[0]
     idxs_resampling = np.random.randint(low=0, high=N, size=R*N)
     data_resampled = X[idxs_resampling].reshape(R, N, X.shape[1])
-    
+
     boot_sample = np.empty((R, output_len))
     for i, r in enumerate(data_resampled):
         boot_sample[i] = func(r)
@@ -134,18 +155,18 @@ def resample(X, func, output_len=1, R=int(1e4), seed=0):
 
 def resample_block(X, Y, func, output_len=1, R=int(1e5), seed=0):
     """
-    X, Y:   ragged arrays or tuples. Each element is an array containing the data for a block. 
+    X, Y:   ragged arrays or tuples. Each element is an array containing the data for a block.
     func:   numba function f: X,Y  ->  Z,   Z: 1D array of size output_len.
     """
     np.random.seed(seed)
-    
+
     n_x = [len(x) for x in X]
     n_y = [len(y) for y in Y]
     idxs_resampling_x = [np.random.randint(low=0, high=n, size=R*n) for n in n_x]
     idxs_resampling_y = [np.random.randint(low=0, high=n, size=R*n) for n in n_y]
     X_resampled = [x[idxs_resampling].reshape(R, n) for x, n, idxs_resampling in zip(X, n_x, idxs_resampling_x)]
     Y_resampled = [y[idxs_resampling].reshape(R, n) for y, n, idxs_resampling in zip(Y, n_y, idxs_resampling_y)]
-    
+
     boot_sample = np.empty((R, output_len))
     for i in range(R):
         Xi = np.hstack([x[i] for x in X_resampled])
@@ -153,7 +174,7 @@ def resample_block(X, Y, func, output_len=1, R=int(1e5), seed=0):
         boot_sample[i] = func(Xi, Yi)
     return boot_sample
 
-    
+
 @njit
 def jackknife_resampling(data):
     """Performs jackknife resampling on numpy arrays.
@@ -206,7 +227,7 @@ def _percentile_of_score(a, score, axis, account_equal=False):
         return ((a < score).sum(axis=axis) + (a <= score).sum(axis=axis)) / (2 * B)
     else:
         return (a < score).sum(axis=axis) / B
-    
+
 def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, stack_data=True, aggregator=_nb_mean, **kwargs):
     """
     Resample using normal resampling if data2 is None.
@@ -228,32 +249,41 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, stack
             resample_func = resample_nb if use_numba else resample
             theta_hat_b = resample_func(data, statistic, R=R, output_len=output_len, smooth=smooth, **kwargs).squeeze()
     else:
-        if stack_data:
-            sample_stat = statistic(np.hstack(data), np.hstack(data2))
+        is_block = isinstance(data, tuple)
+        if is_block:
+            if stack_data:
+                sample_stat = statistic(np.hstack(data), np.hstack(data2))
+            else:
+                sample_stat = statistic(np.array([aggregator(di) for di in data]), np.array([aggregator(di) for di in data2]))
+            total_N = lambda data: np.sum([d.shape[0] for d in data])
+            N = min([total_N(data), total_N(data2)])
+            resample_func = resample_block_nb if use_numba else resample_block
+            resample_kwargs = dict(stack_data=stack_data, aggregator=aggregator)
         else:
-            sample_stat = statistic(np.array([aggregator(di) for di in data]), np.array([aggregator(di) for di in data2]))
+            sample_stat = statistic(data, data2)
+            N = min([len(data), len(data2)])
+            resample_func = resample_twosamples_nb if use_numba else resample_twosamples
+            resample_kwargs = dict()
+
         if hasattr(sample_stat, "__len__"):
             output_len = len(sample_stat)
         else:
             output_len = 1
-        total_N = lambda data: np.sum([d.shape[0] for d in data])
-        N = min([total_N(data), total_N(data2)])
         if N < n_min:
             warnings.warn(f"N={N} < n_min={n_min}. Avoiding computation (returning NaNs) ...")
             theta_hat_b = None
         else:
-            resample_func = resample_block_nb if use_numba else resample_block
-            theta_hat_b = resample_func(data, data2, statistic, R=R, output_len=output_len, stack_data=stack_data, aggregator=aggregator, **kwargs).squeeze()
-            if stack_data:
+            theta_hat_b = resample_func(data, data2, statistic, R=R, output_len=output_len, **resample_kwargs, **kwargs).squeeze()
+            if stack_data and is_block:
                 data = np.hstack(data)
                 data2 = np.hstack(data2)
     return data, data2, theta_hat_b, sample_stat, N
-    
+
 def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba=True, n_min=5, **kwargs):
     """
     If data2 is provided, assumes a block resampling and statistic takes two arguments.
     Optional kwargs for aggregating data, data2 before computing the statistic:
-            stack_data = False, 
+            stack_data = False,
             aggregator = @njit
                          def nb_mean(x):
                              return np.mean(x)
@@ -266,15 +296,15 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
         probs = np.array([alpha, 1])
     else:
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
-        
+
     data, data2, theta_hat_b, sample_stat, N = _resample(data, data2, use_numba, statistic, R=R, n_min=n_min, **kwargs)
-    
+
     if theta_hat_b is None:
         return np.array([np.NaN, np.NaN])
-        
+
     alpha_bca = _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba)[0]
-    
-    if np.isnan(alpha_bca).all(): 
+
+    if np.isnan(alpha_bca).all():
         warnings.warn('CI shows there is only one value. Check data.', RuntimeWarning)
         if data2 is None:
             sample_stat = statistic(data)
@@ -289,7 +319,7 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
     #     return np.array([-np.inf, np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0)])
     #elif alternative == 'greater':
     #    return np.array([np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0), np.inf])
-    
+
 def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba):
     """Bias-corrected and accelerated interval."""
     # calculate z0_hat
@@ -307,7 +337,7 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
     else:
         theta_hat_jk = jackknife_stat_two_samples(data, data2, statistic)
     n = theta_hat_jk.shape[0]
-    theta_hat_jk_dot = theta_hat_jk.mean(axis=0) 
+    theta_hat_jk_dot = theta_hat_jk.mean(axis=0)
 
     U = (n - 1) * (theta_hat_jk_dot - theta_hat_jk)
     num = (U**3).sum(axis=0) / n**3
@@ -366,7 +396,7 @@ def compute_CI_studentized(base, results, studentized_results, alpha=0.05, alter
     bootstrap_estimate = results.mean(axis=0)
     errors = results - bootstrap_estimate
     std_err = np.asarray(np.sqrt(np.diag(errors.T.dot(errors) / R)))
-    
+
     lower = np.empty((output_len))
     upper = np.empty((output_len))
     alpha_tails = alpha / 2 if alternative == 'two-sided' else alpha
@@ -377,8 +407,8 @@ def compute_CI_studentized(base, results, studentized_results, alpha=0.05, alter
         upper.fill(np.inf)
     elif alternative == 'greater':
         lower.fill(-1 * np.inf)
-        
-    # Basic and studentized use the lower empirical quantile to compute upper and vice versa.      
+
+    # Basic and studentized use the lower empirical quantile to compute upper and vice versa.
     lower_copy = lower + 0.0
     lower = base - upper * std_err
     upper = base - lower_copy * std_err
@@ -395,7 +425,7 @@ def vs_integrand(x, f_linear):
 def cov(results, base=None, recenter=False):
     """
     reps : Number of bootstrap replications
-    recenter : Whether to center the bootstrap variance estimator on the average of the bootstrap samples (True), or 
+    recenter : Whether to center the bootstrap variance estimator on the average of the bootstrap samples (True), or
                        to center on the original sample estimate (False).
     """
     if recenter:
@@ -414,7 +444,7 @@ def _bootstrap_studentized_resampling(data, statistic, alpha=0.05, R=10000, stud
     n = data.shape[0]
     if divide_by_se:
         def get_studentized(data_r, result, seed):
-            nested_resampling = resample_nb(data_r, statistic, R=studentized_reps, output_len=output_len, seed=seed, smooth=False)        
+            nested_resampling = resample_nb(data_r, statistic, R=studentized_reps, output_len=output_len, seed=seed, smooth=False)
             std_err = np.sqrt(np.diag(cov(nested_resampling, result, recenter=recenter)))
             err = result - base
             t_result = err /std_err
@@ -422,7 +452,7 @@ def _bootstrap_studentized_resampling(data, statistic, alpha=0.05, R=10000, stud
     else:
         def get_studentized(data_r, result, seed):
             return result - base, np.NaN
-    
+
     data_r = resample_nb_X(data, R=R, seed=seed, smooth=smooth)
     if se_func is None:
         for i, d_r in enumerate(data_r):
@@ -440,15 +470,15 @@ def _bootstrap_studentized_resampling(data, statistic, alpha=0.05, R=10000, stud
             se_bootstrap[i] = se
     return base, results, studentized_results, se_bootstrap
 
-def CI_studentized(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sided', smooth=False, vs=False, 
-                   frac_g=2/3, frac_invert=1/10, studentized_reps=100, 
+def CI_studentized(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sided', smooth=False, vs=False,
+                   frac_g=2/3, frac_invert=1/10, studentized_reps=100,
                    integration_precision=1e-4, **kwargs):
     assert alternative in ['two-sided', 'less', 'greater'], f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'."
     base, results, studentized_results, se_bootstrap = _bootstrap_studentized_resampling(data, statistic, smooth=smooth, R=R, studentized_reps=studentized_reps, **kwargs)
     if vs:
         g, lowess_linear_interp = vs_transform(data, results, se_bootstrap, precision=integration_precision, frac=frac_g)
         base_g, results_g, studentized_results_g, _ = _bootstrap_studentized_resampling(g, statistic, R=R, divide_by_se=False, smooth=False)
-        CI = invert_CI(compute_CI_studentized(base_g, results_g, studentized_results_g, alpha=alpha, alternative=alternative), 
+        CI = invert_CI(compute_CI_studentized(base_g, results_g, studentized_results_g, alpha=alpha, alternative=alternative),
                        data, g, lowess_linear_interp, frac=frac_invert, integration_precision=integration_precision)
     else:
         CI = compute_CI_studentized(base, results, studentized_results, alpha=alpha, alternative=alternative)
@@ -481,9 +511,9 @@ def _compute_CI_percentile(boot_sample, alpha, alternative):
 
 def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=3, use_numba=True, **kwargs):
     """
-    If data2 is provided, assumes a block resampling and statistic takes two arguments.
+    If data2 is provided, statistic takes two arguments and assumes block resampling if the input data are tuples.
     Optional kwargs for aggregating data, data2 before computing the statistic:
-            stack_data = False, 
+            stack_data = False,
             aggregator = @njit
                          def nb_mean(x):
                              return np.mean(x)
@@ -491,16 +521,16 @@ def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=Fa
     data, data2, boot_sample, sample_stat, N = _resample(data, data2, use_numba, statistic, R=R, n_min=n_min, smooth=smooth, **kwargs)
     if boot_sample is None:
         return np.array([np.NaN, np.NaN])
-    else:    
+    else:
         return _compute_CI_percentile(boot_sample, alpha, alternative)
 
 def CI_all(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sided', coverage_iters=int(1e5), coverage_seed=42, avg_len=3, exclude=['studentized_vs', 'studentized_vs_smooth']):
     """
-    Computes all CIs. 
+    Computes all CIs.
     exclude: CIs to exclude. Available: percentile
                                         percentile_smooth
                                         bca
-                                        bca_smooth 
+                                        bca_smooth
                                         studentized
                                         studentized_smooth
                                         studentized_vs
@@ -515,8 +545,8 @@ def CI_all(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sided', cov
                  studentized_vs = (CI_studentized, dict(vs=True)),
                  studentized_vs_smooth = (CI_studentized, dict(vs=True, smooth=True))
                 )
-    specs = {k: v for k, v in specs.items() if k not in exclude} 
-    
+    specs = {k: v for k, v in specs.items() if k not in exclude}
+
     CIs = defaultdict(list)
     for label, (func, kws) in tqdm(specs.items()):
         CI = func(data, statistic, R=R, alpha=alpha, alternative=alternative, **kws)
@@ -532,10 +562,10 @@ def CI_all(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sided', cov
 
 def power_analysis_naive(data, statistic, low, high, N_values=np.array([5, 10, 25, 50, 100, 200]), R=int(1e4), seed=0):
     """
-    Naive bootstrap power and sample-size calculation for accepting H0. 
+    Naive bootstrap power and sample-size calculation for accepting H0.
     Computes violations on the low and high bound of H0.
     See Efron-Tshibirani: An introduction to the bootstrap,  p. 379-381.
-    
+
     Returns: dataframe with index=N_values, columns=[low_fails, high_fails, power].
     """
     results = defaultdict(list)
@@ -555,25 +585,25 @@ def power_analysis_naive(data, statistic, low, high, N_values=np.array([5, 10, 2
 def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([5, 10, 25, 50, 100, 200]), recenter=False, seed=0,
                    R=int(1e4), R_se=int(1e5), R_se_nested=int(1e3)):
     """
-    Stable bootstrap power and sample-size calculation for accepting H0. 
+    Stable bootstrap power and sample-size calculation for accepting H0.
     Computes violations on the studentized equivalent for the low and high bound of H0.
     Takes into account the variability in the original sample (size n):   bootstrap estimate, SE of the bootstrap estimate.
                                      and in the future sample (size N):   bootstrap estimate.
     See Efron-Tshibirani: An introduction to the bootstrap,  p. 381-384.
-    
+
     Returns: dataframe with index=N_values, columns=[low_fails, high_fails, power].
     """
     n = data.shape[0]
     if n not in N_values:
         N_values = np.sort(np.hstack((n, N_values)))
     base = statistic(data)
-    se_estimate = np.sqrt(np.diag(cov(resample_nb(data, statistic, seed=seed, R=R_se, output_len=output_len), 
+    se_estimate = np.sqrt(np.diag(cov(resample_nb(data, statistic, seed=seed, R=R_se, output_len=output_len),
                                       base,
                                       recenter=recenter)
-                                 ))    
+                                 ))
     low_studentized = (base - low) / se_estimate
     high_studentized = (base - high) / se_estimate
-    
+
     # Estimation of SE (datasize = n). This is the computational bottleneck.
     data_n = resample_nb_X(data, R=R, seed=seed+1)
     se_estimate_n = np.empty((R, output_len))
@@ -582,18 +612,18 @@ def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([
         estimate_n_i = statistic(d_n)
         nested_estimate_n = resample_nb(d_n, statistic, seed=seed+3+i, R=R_se_nested, output_len=output_len)
         estimate_n[i] = estimate_n_i
-        se_estimate_n[i] = np.sqrt(np.diag(cov(nested_estimate_n, estimate_n_i, recenter=recenter))) 
-        
+        se_estimate_n[i] = np.sqrt(np.diag(cov(nested_estimate_n, estimate_n_i, recenter=recenter)))
+
     # Violations of studentized endpoints.
     results = defaultdict(list)
     for N in N_values:
         estimate_N = resample_nb(data, statistic, N=N, R=R, seed=seed+2, output_len=output_len)
-        T = (estimate_n - estimate_N) / se_estimate_n           
+        T = (estimate_n - estimate_N) / se_estimate_n
         low_violations = (T >= low_studentized).mean()
         high_violations = (T <= high_studentized).mean()
         power = 1 - low_violations - high_violations
         results['violations-low'].append(low_violations)
         results['violations-high'].append(high_violations)
         results['power'].append(power)
-        
+
     return pd.DataFrame(results, index=N_values)
