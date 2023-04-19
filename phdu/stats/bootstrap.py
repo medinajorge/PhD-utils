@@ -85,7 +85,7 @@ def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
 def resample_twosamples_nb(X1, X2, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
     """Xi: array of shape (N_samples, n_vars)."""
     data_resampled_1 = resample_nb_X(X1, R=R, seed=seed, smooth=smooth, N=N)
-    data_resampled_2 = resample_nb_X(X2, R=R, seed=seed, smooth=smooth, N=N)
+    data_resampled_2 = resample_nb_X(X2, R=R, seed=seed+1, smooth=smooth, N=N)
 
     boot_sample = np.empty((R, output_len))
     for i, (r1, r2) in enumerate(zip(data_resampled_1, data_resampled_2)):
