@@ -97,6 +97,8 @@ def empty_trash(verbose=1):
 def delete_files_by_key(root, keys):
     """Delete all files in root and following subdirectories containing at least one of the keys."""
     # tree walk starting in directory 'data':
+    if isinstance(keys, str):
+        keys = [keys]
     root = 'data'
     count = 0
     for dirpath, dirnames, filenames in os.walk(root):
