@@ -146,7 +146,7 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
         fig.update_layout(**mod_range(fig, ([-0.25, len(x)-0.75], yrange)))
     return fig
 
-def CI_ss_plot(df, label=None, width=0.05, ms=10, ns_color='#323232', ss_color=next(plotly_default_colors()), **CI_plot_kwargs):
+def CI_ss_plot(df, label=False, width=0.05, ms=10, ns_color='#323232', ss_lower_color='#1f77b4', ss_upper_color='#ff7f0e', **CI_plot_kwargs):
     """
     df: Dataframe containing the x coordinate in the index
         and columns:
@@ -159,30 +159,38 @@ def CI_ss_plot(df, label=None, width=0.05, ms=10, ns_color='#323232', ss_color=n
         y = x.copy()
         y[bool_arr] = np.NaN
         return y
-    significant = np.sign(df['lb']) == np.sign(df['ub'])
-    df_ns, df_ss = df.copy(), df.copy()
+    lb_sign = np.sign(df['lb'])
+    ss = lb_sign == np.sign(df['ub'])
+    ss_upper = ss & (lb_sign == 1)
+    ss_lower = ss & (lb_sign == -1)
+    df_ns, df_ss_upper, df_ss_lower = df.copy(), df.copy(), df.copy()
     cis = np.vstack(df.CI.values)
-    df_ns['CI'] = map_to_nan(cis, significant).tolist()
-    df_ss['CI'] = map_to_nan(cis, ~significant).tolist()
+    df_ns['CI'] = map_to_nan(cis, ss).tolist()
+    df_ss_upper['CI'] = map_to_nan(cis, ~ss_upper).tolist()
+    df_ss_lower['CI'] = map_to_nan(cis, ~ss_lower).tolist()
     # NS intervals
-    fig = CI_plot(df_ns.index, df_ns['sample stat'].values, np.vstack(df_ns['CI'].values), width=width, ms=ms, color=color_std(ns_color, opacity=0.55),
+    fig = CI_plot(df_ns.index, df_ns['sample stat'].values, np.vstack(df_ns['CI'].values), width=width, ms=ms, color=color_std(ns_color, opacity=0.55), label='Not SS' if label else None,
                   **CI_plot_kwargs)
     # Adding significant intervals
-    fig = CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=width, ms=ms, fig=fig, color=color_std(ss_color, opacity=0.2))
+    figdata = {'SS (>0)': (df_ss_upper, ss_upper_color), 'SS (<0)': (df_ss_lower, ss_lower_color)}
+    for label_ss, (df_ss, ss_color) in figdata.items():
+        fig = CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=width, ms=ms, fig=fig, color=color_std(ss_color, opacity=0.2), label=label_ss if label else None)
     # colorizing the index
-    def colorize(index):
+    def colorize(index_upper, index_lower):
         """
         index: pd.Series where index is the feature name and value is of type bool.
         """
         ticktext = []
-        for f, is_ss in index.items():
-            if is_ss:
-                ticktext.append(f"<span style='color:{str(ss_color)}'> {str(f)} </span>")
+        for f, is_ss_upper in index_upper.items():
+            if is_ss_upper:
+                ticktext.append(f"<span style='color:{str(ss_upper_color)}'> {str(f)} </span>")
+            elif index_lower[f]: # is_ss_lower
+                ticktext.append(f"<span style='color:{str(ss_lower_color)}'> {str(f)} </span>")
             else:
                 ticktext.append(f"<span style='color:{str(ns_color)}'> {str(f)} </span>")
         return ticktext
-    ticktext = colorize(significant)
-    fig.update_layout(xaxis=dict(tickmode='array', ticktext=ticktext, tickvals=np.arange(significant.size)))
+    ticktext = colorize(ss_upper, ss_lower)
+    fig.update_layout(xaxis=dict(tickmode='array', ticktext=ticktext, tickvals=np.arange(ss.size)))
     return fig
 
 def permtest_plot(df, H1="", colorscale="Inferno", log=True, height=800, width=1000, font_size=40, bar_len=0.9, bar_x=0.95, bar_thickness=100):
