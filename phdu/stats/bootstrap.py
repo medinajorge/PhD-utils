@@ -52,11 +52,11 @@ def resample_paired_nb(X, Y, func, output_len=1, R=int(1e5), seed=0):
 def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=0):
     """X: array of shape (N_samples, n_vars)."""
     np.random.seed(seed)
-    n, output_len = X.shape
+    n, num_vars = X.shape
     if N == 0:
         N = n
     idxs_resampling = np.random.randint(low=0, high=n, size=R*N)
-    data_resampled = X[idxs_resampling].reshape(R, N, output_len)
+    data_resampled = X[idxs_resampling].reshape(R, N, num_vars)
     if smooth:
         def x_in_percentile(x):
             low, high  = np.percentile(x, [5, 95])
@@ -110,34 +110,43 @@ def _nb_mean(x):
     return np.mean(x)
 
 @njit
-def resample_block_nb(X, Y, func, output_len=1, R=int(1e5), seed=0, stack_data=True, aggregator=_nb_mean):
+def resample_block_nb(X, Y, func, output_len=1, R=int(1e4), R_B=int(1e3), seed=0, aggregator=_nb_mean):
     """
+    This function follows the following procedure:
+    1. Resamples paired blocks of data (X_k, Y_k) R times. k denotes the block label.
+    2. For each subset  X_k and Y_k, resample their contents R_B times.
+    3. Calculate the aggregated values of X_k and Y_k. Let's call them X_k^* and Y_k^*.
+    4. Compute the statistic of interest (func) using X_k^* and Y_k^*. Notice that now paired statistics can be used.
+
     X, Y:         ragged arrays or tuples. Each element is an array containing the data for a block.
     func:         numba function f: X,Y  ->  Z,   Z: 1D array of size output_len.
     aggregator:   numba function for aggregating data from a block.
     """
     np.random.seed(seed)
-    def stack(arr_list):
-        return np.array([a for arr in arr_list for a in arr])
+    R_T = R * R_B
+    boot_sample = np.empty((R_T, output_len))
 
-    n_x = [len(x) for x in X]
-    n_y = [len(y) for y in Y]
-    idxs_resampling_x = [np.random.randint(low=0, high=n, size=R*n) for n in n_x]
-    idxs_resampling_y = [np.random.randint(low=0, high=n, size=R*n) for n in n_y]
-    X_resampled = [x[idxs_resampling].reshape(R, n) for x, n, idxs_resampling in zip(X, n_x, idxs_resampling_x)]
-    Y_resampled = [y[idxs_resampling].reshape(R, n) for y, n, idxs_resampling in zip(Y, n_y, idxs_resampling_y)]
+    X = np.array(X, dtype=object)
+    Y = np.array(Y, dtype=object)
+    data = np.vstack((X, Y)).T
+    num_blocks = data.shape[0]
+    idxs_resampling_blocks = np.random.randint(low=0, high=num_blocks, size=R*num_blocks)
+    data_resampled = data[idxs_resampling_blocks].reshape(R, num_blocks, 2)
+    data_resampled = np.swapaxes(data_resampled, 1, 2)
 
-    boot_sample = np.empty((R, output_len))
-    if stack_data:
-        for i in range(R):
-            Xi = stack([x[i] for x in X_resampled])
-            Yi = stack([y[i] for y in Y_resampled])
-            boot_sample[i] = func(Xi, Yi)
-    else:
-        for i in range(R):
-            Xi = np.array([aggregator(x[i]) for x in X_resampled])
-            Yi = np.array([aggregator(y[i]) for y in Y_resampled])
-            boot_sample[i] = func(Xi, Yi)
+    for i, (Xi, Yi) in enumerate(data_resampled):
+        n_Xi = [len(x) for x in Xi]
+        n_Yi = [len(y) for y in Yi]
+        idxs_resampling_Xi = [np.random.randint(low=0, high=n, size=R_B*n) for n in n_Xi]
+        idxs_resampling_Yi = [np.random.randint(low=0, high=n, size=R_B*n) for n in n_Yi]
+        Xi_resampled = [x[idxs_resampling].reshape(R_B, n) for x, n, idxs_resampling in zip(Xi, n_Xi, idxs_resampling_Xi)]
+        Yi_resampled = [y[idxs_resampling].reshape(R_B, n) for y, n, idxs_resampling in zip(Yi, n_Yi, idxs_resampling_Yi)]
+
+        idx_start = i * R_B
+        for j in range(R_B):
+            Xij = np.array([aggregator(x[j]) for x in Xi_resampled])
+            Yij = np.array([aggregator(y[j]) for y in Yi_resampled])
+            boot_sample[idx_start + j] = func(Xij, Yij)
     return boot_sample
 
 def resample(X, func, output_len=1, R=int(1e4), seed=0):
@@ -586,10 +595,10 @@ def power_analysis_naive(data, statistic, low, high, N_values=np.array([5, 10, 2
         results['power'].append(power)
     return pd.DataFrame(results, index=N_values)
 
-def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([5, 10, 25, 50, 100, 200]), recenter=False, seed=0,
-                   R=int(1e4), R_se=int(1e5), R_se_nested=int(1e3)):
+def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([5, 10, 25, 50, 100, 200]), recenter=False, seed=0, seed_N=int(1e9),
+                   R=int(1e4), R_se=int(1e5), R_se_nested=int(1e3), R_N=int(1e5), alpha_low=0.025, alpha_high=0.025):
     """
-    Stable bootstrap power and sample-size calculation for accepting H0.
+    Stable bootstrap power and sample-size calculation for accepting H0 with confidence (1 - alpha_low - alpha_high).
     Computes violations on the studentized equivalent for the low and high bound of H0.
     Takes into account the variability in the original sample (size n):   bootstrap estimate, SE of the bootstrap estimate.
                                      and in the future sample (size N):   bootstrap estimate.
@@ -621,10 +630,12 @@ def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([
     # Violations of studentized endpoints.
     results = defaultdict(list)
     for N in N_values:
-        estimate_N = resample_nb(data, statistic, N=N, R=R, seed=seed+2, output_len=output_len)
-        T = (estimate_n - estimate_N) / se_estimate_n
-        low_violations = (T >= low_studentized).mean()
-        high_violations = (T <= high_studentized).mean()
+        estimate_N = resample_nb(data, statistic, N=N, R=R_N, seed=seed_N, output_len=output_len)
+        estimate_N_low, estimate_N_high = np.percentile(estimate_N, [100*alpha_low, 100*(1-alpha_high)], axis=0)
+        T_l = (estimate_n - estimate_N_low) / se_estimate_n
+        T_h = (estimate_n - estimate_N_high) / se_estimate_n
+        low_violations = (T_l > low_studentized).mean()
+        high_violations = (T_h < high_studentized).mean()
         power = 1 - low_violations - high_violations
         results['violations-low'].append(low_violations)
         results['violations-high'].append(high_violations)
