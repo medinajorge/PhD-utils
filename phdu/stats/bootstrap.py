@@ -118,7 +118,7 @@ def resample_block_nb(X, Y, func, output_len=1, R=int(1e4), R_B=int(1e3), seed=0
     3. Calculate the aggregated values of X_k and Y_k. Let's call them X_k^* and Y_k^*.
     4. Compute the statistic of interest (func) using X_k^* and Y_k^*. Notice that now paired statistics can be used.
 
-    X, Y:         ragged arrays or tuples. Each element is an array containing the data for a block.
+    X, Y:         ragged arrays or tuples. Each element is an array containing the data for a block. Ensure there are no NaNs.
     func:         numba function f: X,Y  ->  Z,   Z: 1D array of size output_len.
     aggregator:   numba function for aggregating data from a block.
     """
@@ -126,28 +126,67 @@ def resample_block_nb(X, Y, func, output_len=1, R=int(1e4), R_B=int(1e3), seed=0
     R_T = R * R_B
     boot_sample = np.empty((R_T, output_len))
 
-    X = np.array(X, dtype=object)
-    Y = np.array(Y, dtype=object)
-    data = np.vstack((X, Y)).T
-    num_blocks = data.shape[0]
-    idxs_resampling_blocks = np.random.randint(low=0, high=num_blocks, size=R*num_blocks)
-    data_resampled = data[idxs_resampling_blocks].reshape(R, num_blocks, 2)
-    data_resampled = np.swapaxes(data_resampled, 1, 2)
+    num_blocks = len(X)
+    assert num_blocks == len(Y), "X and Y must have the same # blocks"
+    idxs_resampling_blocks = np.random.randint(low=0, high=num_blocks, size=R*num_blocks).reshape(R, num_blocks)
 
-    for i, (Xi, Yi) in enumerate(data_resampled):
+    for i, idx_blocks in enumerate(idxs_resampling_blocks):
+        Xi = [X[k] for k in idx_blocks]
+        Yi = [Y[k] for k in idx_blocks]
         n_Xi = [len(x) for x in Xi]
         n_Yi = [len(y) for y in Yi]
-        idxs_resampling_Xi = [np.random.randint(low=0, high=n, size=R_B*n) for n in n_Xi]
-        idxs_resampling_Yi = [np.random.randint(low=0, high=n, size=R_B*n) for n in n_Yi]
-        Xi_resampled = [x[idxs_resampling].reshape(R_B, n) for x, n, idxs_resampling in zip(Xi, n_Xi, idxs_resampling_Xi)]
-        Yi_resampled = [y[idxs_resampling].reshape(R_B, n) for y, n, idxs_resampling in zip(Yi, n_Yi, idxs_resampling_Yi)]
+        idxs_resampling_Xi = [np.random.randint(low=0, high=n, size=R_B*n).reshape(R_B, n) for n in n_Xi]
+        idxs_resampling_Yi = [np.random.randint(low=0, high=n, size=R_B*n).reshape(R_B, n) for n in n_Yi]
 
         idx_start = i * R_B
         for j in range(R_B):
-            Xij = np.array([aggregator(x[j]) for x in Xi_resampled])
-            Yij = np.array([aggregator(y[j]) for y in Yi_resampled])
+            Xi_resampled = [x[idxs_resampling_Xi[k][j]] for k, x in enumerate(Xi)]
+            Yi_resampled = [y[idxs_resampling_Yi[k][j]] for k, y in enumerate(Yi)]
+            Xij = np.array([aggregator(x) for x in Xi_resampled])
+            Yij = np.array([aggregator(y) for y in Yi_resampled])
             boot_sample[idx_start + j] = func(Xij, Yij)
     return boot_sample
+
+# Maybe numba adds compatibility for arrays with dtype=np.ndarray in the future.
+# @njit
+# def resample_block_nb(X, Y, func, output_len=1, R=int(1e4), R_B=int(1e3), seed=0, aggregator=_nb_mean):
+#
+#     This function follows the following procedure:
+#     1. Resamples paired blocks of data (X_k, Y_k) R times. k denotes the block label.
+#     2. For each subset  X_k and Y_k, resample their contents R_B times.
+#     3. Calculate the aggregated values of X_k and Y_k. Let's call them X_k^* and Y_k^*.
+#     4. Compute the statistic of interest (func) using X_k^* and Y_k^*. Notice that now paired statistics can be used.
+
+#     X, Y:         ragged arrays or tuples. Each element is an array containing the data for a block.
+#     func:         numba function f: X,Y  ->  Z,   Z: 1D array of size output_len.
+#     aggregator:   numba function for aggregating data from a block.
+#
+#     np.random.seed(seed)
+#     R_T = R * R_B
+#     boot_sample = np.empty((R_T, output_len))
+
+#     X = np.array(X, dtype=object)
+#     Y = np.array(Y, dtype=object)
+#     data = np.vstack((X, Y)).T
+#     num_blocks = data.shape[0]
+#     idxs_resampling_blocks = np.random.randint(low=0, high=num_blocks, size=R*num_blocks)
+#     data_resampled = data[idxs_resampling_blocks].reshape(R, num_blocks, 2)
+#     data_resampled = np.swapaxes(data_resampled, 1, 2)
+
+#     for i, (Xi, Yi) in enumerate(data_resampled):
+#         n_Xi = [len(x) for x in Xi]
+#         n_Yi = [len(y) for y in Yi]
+#         idxs_resampling_Xi = [np.random.randint(low=0, high=n, size=R_B*n) for n in n_Xi]
+#         idxs_resampling_Yi = [np.random.randint(low=0, high=n, size=R_B*n) for n in n_Yi]
+#         Xi_resampled = [x[idxs_resampling].reshape(R_B, n) for x, n, idxs_resampling in zip(Xi, n_Xi, idxs_resampling_Xi)]
+#         Yi_resampled = [y[idxs_resampling].reshape(R_B, n) for y, n, idxs_resampling in zip(Yi, n_Yi, idxs_resampling_Yi)]
+
+#         idx_start = i * R_B
+#         for j in range(R_B):
+#             Xij = np.array([aggregator(x[j]) for x in Xi_resampled])
+#             Yij = np.array([aggregator(y[j]) for y in Yi_resampled])
+#             boot_sample[idx_start + j] = func(Xij, Yij)
+#     return boot_sample
 
 def resample(X, func, output_len=1, R=int(1e4), seed=0):
     """X: array of shape (N_samples, n_vars)."""
