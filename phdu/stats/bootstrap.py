@@ -276,7 +276,7 @@ def _percentile_of_score(a, score, axis, account_equal=False):
     else:
         return (a < score).sum(axis=axis) / B
 
-def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, stack_data=True, aggregator=_nb_mean, **kwargs):
+def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, aggregator=_nb_mean, **kwargs):
     """
     Resample using normal resampling if data2 is None.
     Else uses block resampling with data and data2.
@@ -299,14 +299,14 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, stack
     else:
         is_block = isinstance(data, tuple)
         if is_block:
-            if stack_data:
-                sample_stat = statistic(np.hstack(data), np.hstack(data2))
-            else:
-                sample_stat = statistic(np.array([aggregator(di) for di in data]), np.array([aggregator(di) for di in data2]))
+            # if stack_data:
+            #     sample_stat = statistic(np.hstack(data), np.hstack(data2))
+            # else:
+            sample_stat = statistic(np.array([aggregator(di) for di in data]), np.array([aggregator(di) for di in data2]))
             total_N = lambda data: np.sum([d.shape[0] for d in data])
             N = min([total_N(data), total_N(data2)])
             resample_func = resample_block_nb if use_numba else resample_block
-            resample_kwargs = dict(stack_data=stack_data, aggregator=aggregator)
+            resample_kwargs = dict(aggregator=aggregator)
         else:
             if data.ndim == 1:
                 data = data[:, None]
@@ -326,16 +326,15 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, stack
             theta_hat_b = None
         else:
             theta_hat_b = resample_func(data, data2, statistic, R=R, output_len=output_len, **resample_kwargs, **kwargs).squeeze()
-            if stack_data and is_block:
-                data = np.hstack(data)
-                data2 = np.hstack(data2)
+            # if stack_data and is_block:
+            #     data = np.hstack(data)
+            #     data2 = np.hstack(data2)
     return data, data2, theta_hat_b, sample_stat, N
 
 def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba=True, n_min=5, **kwargs):
     """
     If data2 is provided, assumes a block resampling and statistic takes two arguments.
     Optional kwargs for aggregating data, data2 before computing the statistic:
-            stack_data = False,
             aggregator = @njit
                          def nb_mean(x):
                              return np.mean(x)
@@ -565,7 +564,6 @@ def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=Fa
     """
     If data2 is provided, statistic takes two arguments and assumes block resampling if the input data are tuples.
     Optional kwargs for aggregating data, data2 before computing the statistic:
-            stack_data = False,
             aggregator = @njit
                          def nb_mean(x):
                              return np.mean(x)
