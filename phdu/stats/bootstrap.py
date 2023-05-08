@@ -633,7 +633,7 @@ def power_analysis_naive(data, statistic, low, high, N_values=np.array([5, 10, 2
     return pd.DataFrame(results, index=N_values)
 
 def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([5, 10, 25, 50, 100, 200]), recenter=False, seed=0, seed_N=int(1e9),
-                   R=int(1e4), R_se=int(1e5), R_se_nested=int(1e3), R_N=int(1e5), alpha_low=0.025, alpha_high=0.025):
+                   R=int(1e4), R_se=int(1e5), R_se_nested=int(1e3), R_N=int(1e4), alpha_low=0.05, alpha_high=0.05):
     """
     Stable bootstrap power and sample-size calculation for accepting H0 with confidence (1 - alpha_low - alpha_high).
     Computes violations on the studentized equivalent for the low and high bound of H0.
@@ -667,13 +667,18 @@ def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([
     # Violations of studentized endpoints.
     results = defaultdict(list)
     for N in N_values:
-        estimate_N = resample_nb(data, statistic, N=N, R=R_N, seed=seed_N, output_len=output_len)
-        estimate_N_low, estimate_N_high = np.percentile(estimate_N, [100*alpha_low, 100*(1-alpha_high)], axis=0)
+        estimate_N_low = np.empty((R, output_len))
+        estimate_N_high = np.empty((R, output_len))
+        for i in range(R):
+            estimate_N = resample_nb(data, statistic, N=N, R=R_N, seed=seed_N+i, output_len=output_len)
+            estimate_N_low[i] = np.percentile(estimate_N, 100*alpha_low, axis=0)
+            estimate_N_high[i] = np.percentile(estimate_N, 100*(1-alpha_high), axis=0)
         T_l = (estimate_n - estimate_N_low) / se_estimate_n
         T_h = (estimate_n - estimate_N_high) / se_estimate_n
         low_violations = (T_l > low_studentized).mean()
         high_violations = (T_h < high_studentized).mean()
-        power = 1 - low_violations - high_violations
+        # power = 1 - low_violations - high_violations. Wrong, there can be overlap
+        power = 1 - ( (T_l > low_studentized) | (T_h < high_studentized) ).mean()
         results['violations-low'].append(low_violations)
         results['violations-high'].append(high_violations)
         results['power'].append(power)
