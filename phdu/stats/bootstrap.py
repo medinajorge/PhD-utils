@@ -633,16 +633,23 @@ def power_analysis_naive(data, statistic, low, high, N_values=np.array([5, 10, 2
     return pd.DataFrame(results, index=N_values)
 
 def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([5, 10, 25, 50, 100, 200]), recenter=False, seed=0, seed_N=int(1e9),
-                   R=int(1e4), R_se=int(1e5), R_se_nested=int(1e3), R_N=int(1e4), alpha_low=0.05, alpha_high=0.05):
+                   R=int(1e4), R_se=int(1e5), R_se_nested=int(1e3), R_N=int(1e3), alpha_low=0.05, alpha_high=0.05, method='percentile', exact_CI_p=None):
     """
-    Stable bootstrap power and sample-size calculation for accepting H0 with confidence (1 - alpha_low - alpha_high).
+    Stable bootstrap power and sample-size calculation for accepting
+        H0: stat in [low, high] with confidence (1 - alpha_low - alpha_high).
+
     Computes violations on the studentized equivalent for the low and high bound of H0.
-    Takes into account the variability in the original sample (size n):   bootstrap estimate, SE of the bootstrap estimate.
-                                     and in the future sample (size N):   bootstrap estimate.
+    Takes into account the variability in
+            the original sample (size n):        bootstrap estimate, SE of the bootstrap estimate.
+            and in the future sample (size N):   bootstrap quantile estimate.
     See Efron-Tshibirani: An introduction to the bootstrap,  p. 381-384.
 
     Returns: dataframe with index=N_values, columns=[low_fails, high_fails, power].
     """
+    seed_n = seed+1
+    seed_N = seed+2
+    seed_n_se = seed+3
+
     n = data.shape[0]
     if n not in N_values:
         N_values = np.sort(np.hstack((n, N_values)))
@@ -655,24 +662,34 @@ def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([
     high_studentized = (base - high) / se_estimate
 
     # Estimation of SE (datasize = n). This is the computational bottleneck.
-    data_n = resample_nb_X(data, R=R, seed=seed+1)
+    data_n = resample_nb_X(data, R=R, seed=seed_n)
     se_estimate_n = np.empty((R, output_len))
     estimate_n = np.empty((R, output_len))
     for i, d_n in enumerate(tqdm(data_n)):
         estimate_n_i = statistic(d_n)
-        nested_estimate_n = resample_nb(d_n, statistic, seed=seed+3+i, R=R_se_nested, output_len=output_len)
+        nested_estimate_n = resample_nb(d_n, statistic, seed=seed_n_se+i, R=R_se_nested, output_len=output_len)
         estimate_n[i] = estimate_n_i
         se_estimate_n[i] = np.sqrt(np.diag(cov(nested_estimate_n, estimate_n_i, recenter=recenter)))
 
     # Violations of studentized endpoints.
     results = defaultdict(list)
+    np.random.seed(seed_N)
     for N in N_values:
         estimate_N_low = np.empty((R, output_len))
         estimate_N_high = np.empty((R, output_len))
         for i in range(R):
-            estimate_N = resample_nb(data, statistic, N=N, R=R_N, seed=seed_N+i, output_len=output_len)
-            estimate_N_low[i] = np.percentile(estimate_N, 100*alpha_low, axis=0)
-            estimate_N_high[i] = np.percentile(estimate_N, 100*(1-alpha_high), axis=0)
+            data_N = data[np.random.randint(0, n, size=N)]
+            if method == 'exact':
+                if exact_CI_p is None:
+                    raise ValueError('exact_CI_p must be specified for exact method.')
+                estimate_N_low[i] = conf_interval.ci_percentile_equal_tailed(data_N, exact_CI_p, alpha=alpha_low, alternative='less')[0][1]
+                estimate_N_high[i] = conf_interval.ci_percentile_equal_tailed(data_N, exact_CI_p, alpha=1-alpha_high, alternative='less')[0][1]
+            elif method == 'percentile':
+                estimate_N = resample_nb(data_N, statistic, R=R_N, seed=seed_N+i, output_len=output_len)
+                estimate_N_low[i] = np.percentile(estimate_N, 100*alpha_low, axis=0)
+                estimate_N_high[i] = np.percentile(estimate_N, 100*(1-alpha_high), axis=0)
+            else:
+                raise ValueError('method must be either "exact" or "percentile".')
         T_l = (estimate_n - estimate_N_low) / se_estimate_n
         T_h = (estimate_n - estimate_N_high) / se_estimate_n
         low_violations = (T_l > low_studentized).mean()
