@@ -78,10 +78,10 @@ mod_logaxes_expfmt   = lambda fig, axes=["x", "y"]: {**mod_logaxes(fig, axes=axe
 def mod_common_range(fig, axes=["x", "y"], **kwargs):
     return mod_range(fig, val=get_common_range(fig, axes=axes, **kwargs), axes=axes)
 
-def fig_base_layout(**kwargs):
+def fig_base_layout(ticksize=32, **kwargs):
     base = dict(margin=dict(l=100, r=20, b=80, t=20, pad=1),
-                height=800, width=1000, yaxis=dict(tickfont_size=32),
-                xaxis=dict(tickfont_size=32), font_size=40, legend_font_size=40,
+                height=800, width=1000, yaxis=dict(tickfont_size=ticksize),
+                xaxis=dict(tickfont_size=ticksize), font_size=40, legend_font_size=40,
                 font_family="sans-serif", hovermode=False
                 )
     base.update(kwargs)

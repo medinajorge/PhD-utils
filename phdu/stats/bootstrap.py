@@ -632,8 +632,8 @@ def power_analysis_naive(data, statistic, low, high, N_values=np.array([5, 10, 2
         results['power'].append(power)
     return pd.DataFrame(results, index=N_values)
 
-def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([5, 10, 25, 50, 100, 200]), recenter=False, seed=0, seed_N=int(1e9),
-                   R=int(1e4), R_se=int(1e5), R_se_nested=int(1e3), R_N=int(1e3), alpha_low=0.05, alpha_high=0.05, method='percentile', exact_CI_p=None):
+def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([5, 10, 25, 50, 100, 200]), add_n=True, recenter=False, seed=0, seed_N=int(1e9),
+                   R=int(1e4), R_se=int(1e5), R_se_nested=int(1e3), R_N=int(1e3), alpha_low=0.05, alpha_high=0.05, method='percentile', exact_CI_p=None, tol=1e-8):
     """
     Stable bootstrap power and sample-size calculation for accepting
         H0: stat in [low, high] with confidence (1 - alpha_low - alpha_high).
@@ -651,15 +651,15 @@ def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([
     seed_n_se = seed+3
 
     n = data.shape[0]
-    if n not in N_values:
+    if n not in N_values and add_n:
         N_values = np.sort(np.hstack((n, N_values)))
     base = statistic(data)
     se_estimate = np.sqrt(np.diag(cov(resample_nb(data, statistic, seed=seed, R=R_se, output_len=output_len),
                                       base,
                                       recenter=recenter)
                                  ))
-    low_studentized = (base - low) / se_estimate
-    high_studentized = (base - high) / se_estimate
+    low_studentized = (base - low) / (se_estimate + tol)
+    high_studentized = (base - high) / (se_estimate + tol)
 
     # Estimation of SE (datasize = n). This is the computational bottleneck.
     data_n = resample_nb_X(data, R=R, seed=seed_n)
@@ -680,18 +680,19 @@ def power_analysis(data, statistic, low, high, output_len=1, N_values=np.array([
         for i in range(R):
             data_N = data[np.random.randint(0, n, size=N)]
             if method == 'exact':
+                data_N = data_N.squeeze()
                 if exact_CI_p is None:
                     raise ValueError('exact_CI_p must be specified for exact method.')
-                estimate_N_low[i] = conf_interval.ci_percentile_equal_tailed(data_N, exact_CI_p, alpha=alpha_low, alternative='less')[0][1]
-                estimate_N_high[i] = conf_interval.ci_percentile_equal_tailed(data_N, exact_CI_p, alpha=1-alpha_high, alternative='less')[0][1]
+                estimate_N_low[i] = conf_interval.ci_percentile_equal_tailed(data_N, exact_CI_p, alpha=alpha_low, alternative='greater')[0][0]
+                estimate_N_high[i] = conf_interval.ci_percentile_equal_tailed(data_N, exact_CI_p, alpha=alpha_high, alternative='less')[0][1]
             elif method == 'percentile':
                 estimate_N = resample_nb(data_N, statistic, R=R_N, seed=seed_N+i, output_len=output_len)
                 estimate_N_low[i] = np.percentile(estimate_N, 100*alpha_low, axis=0)
                 estimate_N_high[i] = np.percentile(estimate_N, 100*(1-alpha_high), axis=0)
             else:
                 raise ValueError('method must be either "exact" or "percentile".')
-        T_l = (estimate_n - estimate_N_low) / se_estimate_n
-        T_h = (estimate_n - estimate_N_high) / se_estimate_n
+        T_l = (estimate_n - estimate_N_low) / (se_estimate_n + tol)
+        T_h = (estimate_n - estimate_N_high) / (se_estimate_n + tol)
         low_violations = (T_l > low_studentized).mean()
         high_violations = (T_h < high_studentized).mean()
         # power = 1 - low_violations - high_violations. Wrong, there can be overlap
