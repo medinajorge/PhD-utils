@@ -128,6 +128,11 @@ def resample_block_nb(X, Y, func, output_len=1, R=int(1e4), R_B=int(1e3), seed=0
 
     num_blocks = len(X)
     assert num_blocks == len(Y), "X and Y must have the same # blocks"
+    # Take only common blocks (x, y) where x and y have at least 1 element.
+    idxs_common_blocks = [i for i, (x, y) in enumerate(zip(X, Y)) if len(x) > 0 and len(y) > 0]
+    X = [X[i] for i in idxs_common_blocks]
+    Y = [Y[i] for i in idxs_common_blocks]
+
     idxs_resampling_blocks = np.random.randint(low=0, high=num_blocks, size=R*num_blocks).reshape(R, num_blocks)
 
     for i, idx_blocks in enumerate(idxs_resampling_blocks):
