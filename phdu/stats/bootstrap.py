@@ -128,10 +128,6 @@ def resample_block_nb(X, Y, func, output_len=1, R=int(1e4), R_B=int(1e3), seed=0
 
     num_blocks = len(X)
     assert num_blocks == len(Y), "X and Y must have the same # blocks"
-    # Take only common blocks (x, y) where x and y have at least 1 element.
-    idxs_common_blocks = [i for i, (x, y) in enumerate(zip(X, Y)) if len(x) > 0 and len(y) > 0]
-    X = [X[i] for i in idxs_common_blocks]
-    Y = [Y[i] for i in idxs_common_blocks]
 
     idxs_resampling_blocks = np.random.randint(low=0, high=num_blocks, size=R*num_blocks).reshape(R, num_blocks)
 
@@ -307,9 +303,15 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, aggre
             # if stack_data:
             #     sample_stat = statistic(np.hstack(data), np.hstack(data2))
             # else:
+            # Take only common blocks (x, y) where x and y have at least 1 element.
+            idxs_common_blocks = [i for i, (x, y) in enumerate(zip(data, data2)) if len(x) > 0 and len(y) > 0]
+            if len(idxs_common_blocks) < len(data):
+                warnings.warn("Removing some blocks because they were empty.", RuntimeWarning)
+
+            data = tuple([data[i] for i in idxs_common_blocks])
+            data2 = tuple([data2[i] for i in idxs_common_blocks])
             sample_stat = statistic(np.array([aggregator(di) for di in data]), np.array([aggregator(di) for di in data2]))
-            total_N = lambda data: np.sum([d.shape[0] for d in data])
-            N = min([total_N(data), total_N(data2)])
+            N = len(data) # number of blocks
             resample_func = resample_block_nb if use_numba else resample_block
             resample_kwargs = dict(aggregator=aggregator)
         else:
