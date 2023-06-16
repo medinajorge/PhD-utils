@@ -153,13 +153,17 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
     """
     if fig is None:
         fig = get_figure(xaxis_title=x_title, yaxis_title=y_title)
+
+    idx_to_xlabel = {i: x_val for i, x_val in enumerate(x)}
     for i, (ci, x_val, ci_stat) in enumerate(zip(CI, x, y)):
         if not np.isnan(ci).all():
-            fig.add_shape(type="line", xref="x", yref="y", line=dict(color=color_sample_stat, width=width_sample_stat),  x0=i-width, y0=ci_stat, x1=i+width, y1=ci_stat)
             fig.add_shape(type="rect", xref="x", yref="y", line=dict(color="gray",width=4), fillcolor=color, x0=i-width, y0=ci[0], x1=i+width, y1=ci[1])
-            fig.add_trace(go.Scatter(x=[x_val]*2, y=ci[::-1], showlegend=False, mode="markers",
+            fig.add_trace(go.Scatter(x=[i]*2, y=ci[::-1], showlegend=False, mode="markers",
                                      marker=dict(color=color, symbol=["arrow-bar-down", "arrow-bar-up"], size=ms, line=dict(color="gray", width=2))
                                 ))
+            fig.add_shape(type="line", xref="x", yref="y", line=dict(color=color_sample_stat, width=width_sample_stat),  x0=i-width, y0=ci_stat, x1=i+width, y1=ci_stat)
+
+        fig.update_layout(xaxis=dict(tickvals=[*idx_to_xlabel.keys()], ticktext=[*idx_to_xlabel.values()]))
     if label is not None:
         yrange = [*get_common_range(fig, axes=["y"]).values()][0]
         fig.add_trace(go.Scatter(x=[1000], y=[1000], mode="markers", name=label, showlegend=True,
@@ -167,7 +171,7 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
         fig.update_layout(**mod_range(fig, ([-0.25, len(x)-0.75], yrange)))
     return fig
 
-def CI_ss_plot(df, label=False, width=0.05, ms=10, ns_color='#323232', ss_lower_color='#1f77b4', ss_upper_color='#ff7f0e', **CI_plot_kwargs):
+def CI_ss_plot(df, label=False, width=0.05, ms=10, ns_color='#323232', ss_lower_color='#1f77b4', ss_upper_color='#ff7f0e', color_sample_stat='black', width_sample_stat=5, **CI_plot_kwargs):
     """
     df: Dataframe containing the x coordinate in the index
         and columns:
@@ -191,11 +195,12 @@ def CI_ss_plot(df, label=False, width=0.05, ms=10, ns_color='#323232', ss_lower_
     df_ss_lower['CI'] = map_to_nan(cis, ~ss_lower).tolist()
     # NS intervals
     fig = CI_plot(df_ns.index, df_ns['sample stat'].values, np.vstack(df_ns['CI'].values), width=width, ms=ms, color=color_std(ns_color, opacity=0.55), label='Not SS' if label else None,
+                  color_sample_stat=color_sample_stat, width_sample_stat=width_sample_stat,
                   **CI_plot_kwargs)
     # Adding significant intervals
     figdata = {'SS (>0)': (df_ss_upper, ss_upper_color), 'SS (<0)': (df_ss_lower, ss_lower_color)}
     for label_ss, (df_ss, ss_color) in figdata.items():
-        fig = CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=width, ms=ms, fig=fig, color=color_std(ss_color, opacity=0.2), label=label_ss if label else None)
+        fig = CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=width, ms=ms, fig=fig, color=color_std(ss_color, opacity=0.2), label=label_ss if label else None, color_sample_stat=color_sample_stat, width_sample_stat=width_sample_stat)
     # colorizing the index
     def colorize(index_upper, index_lower):
         """
@@ -212,6 +217,10 @@ def CI_ss_plot(df, label=False, width=0.05, ms=10, ns_color='#323232', ss_lower_
         return ticktext
     ticktext = colorize(ss_upper, ss_lower)
     fig.update_layout(xaxis=dict(tickmode='array', ticktext=ticktext, tickvals=np.arange(ss.size)))
+
+    fig.update_layout(plot_bgcolor='white', yaxis=dict(showline=True, linecolor='black', linewidth=2.4),
+                      xaxis=dict(showline=True, linecolor='black', linewidth=2.4))
+    fig.add_hline(y=0, line=dict(color='black', width=1, dash='dash'))
     return fig
 
 def permtest_plot(df, H1="", colorscale="Inferno", log=True, height=800, width=1000, font_size=40, bar_len=0.9, bar_x=0.95, bar_thickness=100):
