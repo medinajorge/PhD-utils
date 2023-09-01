@@ -1,4 +1,4 @@
-from tidypath import savedata, savefig, add_arg, modify_arg, delete_arg
+from tidypath import savedata, savefig, add_arg, modify_arg, delete_arg, SavedataSkippedComputation
 from . import script_fmt
 from . import np_utils
 from . import pd_utils
