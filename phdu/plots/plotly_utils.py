@@ -95,9 +95,9 @@ def get_figure(height=800, width=1000, ticksize=32, font_size=40, margin=None, f
     """
     Attributes:
     - delete_axes:   delete axes and gridlines
-    - simple:        white background, black axes and gridlines
+    - simple_axes:        white background, black axes and gridlines
     """
-    args = {k: v for k, v in locals().items() if k not in ['kwargs', 'delete_axes', 'simple']}
+    args = {k: v for k, v in locals().items() if k not in ['kwargs', 'delete_axes', 'simple_axes']}
     args.update(kwargs)
 
     fig = go.Figure(layout=fig_base_layout(**args))
