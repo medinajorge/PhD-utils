@@ -55,6 +55,10 @@ def mod_delete_axes(fig, axes=["x", "y"]):
     non_visible_axes_specs = dict(visible=False, showgrid=False, zeroline=False)
     return {f"{ax}axis{i}": non_visible_axes_specs for ax in axes for i in [""] + [*range(1, get_nplots(fig) + 1)]}
 
+def mod_simple_axes(fig, axes=["x", "y"]):
+    simple_axes=dict(showline=True, linecolor='black', linewidth=2.4),
+    return {f"{ax}axis{i}": simple_axes for ax in axes for i in [""] + [*range(1, get_nplots(fig) + 1)]}
+
 def get_mod_layout(key, val=None):
     def mod_layout(fig, val, axes=["x","y"]):
         if isinstance(val, Iterable) and not isinstance(val, str):
@@ -87,15 +91,20 @@ def fig_base_layout(ticksize=32, **kwargs):
     base.update(kwargs)
     return base
 
-def get_figure(height=800, width=1000, ticksize=32, font_size=40, margin=None, font_family="sans-serif", hovermode=False, delete_axes=False, **kwargs):
-    args = locals()
-    del args['kwargs']
-    del args['delete_axes']
+def get_figure(height=800, width=1000, ticksize=32, font_size=40, margin=None, font_family="sans-serif", hovermode=False, delete_axes=False, simple_axes=False, **kwargs):
+    """
+    Attributes:
+    - delete_axes:   delete axes and gridlines
+    - simple:        white background, black axes and gridlines
+    """
+    args = {k: v for k, v in locals().items() if k not in ['kwargs', 'delete_axes', 'simple']}
     args.update(kwargs)
 
     fig = go.Figure(layout=fig_base_layout(**args))
     if delete_axes:
         fig.update_layout(**mod_delete_axes(fig), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    elif simple_axes:
+        fig.update_layout(**mod_simple_axes(fig), plot_bgcolor='white')
     return fig
 
 def subplots_base_layout(cols, rows=1, make_subplots_kwargs={}, **layout_kwargs):
@@ -110,7 +119,7 @@ def subplots_base_layout(cols, rows=1, make_subplots_kwargs={}, **layout_kwargs)
     return base
 
 def get_subplots(cols, rows=1, horizontal_spacing=0.03, vertical_spacing=0.03, height=None, width=2500, ticksize=32, font_size=40, font_family="sans-serif",
-                 hovermode=False, delete_axes=False, shared_xaxes=True, shared_yaxes=True, layout_kwargs={},
+                 hovermode=False, delete_axes=False, simple_axes=False, shared_xaxes=True, shared_yaxes=True, layout_kwargs={},
                  **make_subplots_kwargs):
     height = 800*rows if height is None else height
     fig = make_subplots(figure=go.Figure(layout=dict(margin=dict(l=100, r=20, b=80, t=60, pad=1), height=height, width=width)),
@@ -123,6 +132,8 @@ def get_subplots(cols, rows=1, horizontal_spacing=0.03, vertical_spacing=0.03, h
     fig.update_layout(**mod_ticksize(fig, val=ticksize), legend_font_size=font_size, hovermode=hovermode, **layout_kwargs)
     if delete_axes:
         fig.update_layout(**mod_delete_axes(fig), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    elif simple_axes:
+        fig.update_layout(**mod_simple_axes(fig), plot_bgcolor='white')
     return fig
 
 def transparent_colorscale(fig, threshold=1e-10):
