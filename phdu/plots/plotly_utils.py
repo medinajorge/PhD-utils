@@ -56,7 +56,7 @@ def mod_delete_axes(fig, axes=["x", "y"]):
     return {f"{ax}axis{i}": non_visible_axes_specs for ax in axes for i in [""] + [*range(1, get_nplots(fig) + 1)]}
 
 def mod_simple_axes(fig, axes=["x", "y"]):
-    simple_axes=dict(showline=True, linecolor='black', linewidth=2.4),
+    simple_axes=dict(showline=True, linecolor='black', linewidth=2.4)
     return {f"{ax}axis{i}": simple_axes for ax in axes for i in [""] + [*range(1, get_nplots(fig) + 1)]}
 
 def get_mod_layout(key, val=None):
