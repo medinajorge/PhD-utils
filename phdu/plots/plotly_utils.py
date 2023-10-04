@@ -153,7 +153,7 @@ def set_multicategory_from_df(fig, df):
     fig.data[0]["y"] = multiindex_to_label(df.index)
     return
 
-def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', color_sample_stat="green", width_sample_stat=8,  fig=None, x_title=None, y_title=None, color_legend=None):
+def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', color_sample_stat="green", width_sample_stat=8,  fig=None, x_title=None, y_title=None, color_legend=None, **fig_kwargs):
     """
     Box plot where the box corresponds to the CI.
 
@@ -163,7 +163,7 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
         - CI:   Confidence interval for y.
     """
     if fig is None:
-        fig = get_figure(xaxis_title=x_title, yaxis_title=y_title)
+        fig = get_figure(xaxis_title=x_title, yaxis_title=y_title, **fig_kwargs)
     if color_legend is None:
         color_legend = color
 
