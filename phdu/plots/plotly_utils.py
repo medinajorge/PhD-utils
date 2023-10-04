@@ -153,7 +153,7 @@ def set_multicategory_from_df(fig, df):
     fig.data[0]["y"] = multiindex_to_label(df.index)
     return
 
-def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', color_sample_stat="green", width_sample_stat=8,  fig=None, x_title=None, y_title=None):
+def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', color_sample_stat="green", width_sample_stat=8,  fig=None, x_title=None, y_title=None, color_legend=None):
     """
     Box plot where the box corresponds to the CI.
 
@@ -164,21 +164,23 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
     """
     if fig is None:
         fig = get_figure(xaxis_title=x_title, yaxis_title=y_title)
+    if color_legend is None:
+        color_legend = color
 
     idx_to_xlabel = {i: x_val for i, x_val in enumerate(x)}
-    for i, (ci, x_val, ci_stat) in enumerate(zip(CI, x, y)):
+    for i, (ci, _, ci_stat) in enumerate(zip(CI, x, y)):
         if not np.isnan(ci).all():
+            fig.add_shape(type="line", xref="x", yref="y", line=dict(color=color_sample_stat, width=width_sample_stat),  x0=i-width, y0=ci_stat, x1=i+width, y1=ci_stat)
             fig.add_shape(type="rect", xref="x", yref="y", line=dict(color="gray",width=4), fillcolor=color, x0=i-width, y0=ci[0], x1=i+width, y1=ci[1])
             fig.add_trace(go.Scatter(x=[i]*2, y=ci[::-1], showlegend=False, mode="markers",
                                      marker=dict(color=color, symbol=["arrow-bar-down", "arrow-bar-up"], size=ms, line=dict(color="gray", width=2))
                                 ))
-            fig.add_shape(type="line", xref="x", yref="y", line=dict(color=color_sample_stat, width=width_sample_stat),  x0=i-width, y0=ci_stat, x1=i+width, y1=ci_stat)
 
         fig.update_layout(xaxis=dict(tickvals=[*idx_to_xlabel.keys()], ticktext=[*idx_to_xlabel.values()]))
     if label is not None:
         yrange = [*get_common_range(fig, axes=["y"]).values()][0]
         fig.add_trace(go.Scatter(x=[1000], y=[1000], mode="markers", name=label, showlegend=True,
-                                 marker=dict(symbol="square", color=color, size=22), line=dict(color="gray", width=2)))
+                                 marker=dict(symbol="square", color=color_legend, size=22), line=dict(color="gray", width=2)))
         fig.update_layout(**mod_range(fig, ([-0.25, len(x)-0.75], yrange)))
     return fig
 
