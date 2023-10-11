@@ -2,6 +2,7 @@
 Hierarchical clustering. In the future will include more algorithms
 """
 import pandas as pd
+import numpy as np
 from .stats import corr
 try:
     from scipy.cluster import hierarchy
@@ -27,11 +28,11 @@ def hierarchy_dendrogram(X, fontsize=30, out='data'):
     if is_df:
         labels = X.columns.to_list()
     else:
-        labels = [*range(X.shape[1])] if len(X.shape) > 1 else None #int(-1 + np.sqrt(1 + 8*X.size)/2))] 
-            
+        labels = [*range(X.shape[1])] if len(X.shape) > 1 else None #int(-1 + np.sqrt(1 + 8*X.size)/2))]
+
     fig = plt.figure(figsize=(8, 12))
     ax = plt.subplot(111)
-    
+
     corr_linkage = hierarchy.ward(X.values if is_df else X)
     dendro = hierarchy.dendrogram(
         corr_linkage, labels=labels, ax=ax, leaf_rotation=90 #orientation="left"
@@ -48,7 +49,29 @@ def hierarchy_dendrogram(X, fontsize=30, out='data'):
         return fig
     else:
         raise ValueError(f"out '{out}' not valid. Available: 'data', 'fig'.")
-    
+
+def dendrogram_sort(df, to_distance = lambda x: 1 - x):
+    """
+    Attempts to sort the rows and columns of a matrix according to the dendrogram.
+
+    Attributes:
+        df: pandas DataFrame or numpy array
+        to_distance: function to convert the input df to a distance matrix
+
+        lambda x: 1 - x is useful when dealing with probabilities in a confusion matrix.
+
+    Returns a pandas DataFrame or numpy array with the rows and columns ordered according to the dendrogram
+    """
+    _, dendro = hierarchy_dendrogram(to_distance(df))
+    order = dendro["leaves"]
+    if isinstance(df, pd.core.frame.DataFrame):
+        df = df.iloc[order,:].iloc[:, order]
+    elif isinstance(df, np.ndarray):
+        df = df[order,:][:, order]
+    else:
+        raise ValueError("df must be a pandas DataFrame or a numpy array")
+    return df
+
 
 def hierarchical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1, cmax=1, cmap='inferno'):
     _, dendro = hierarchy_dendrogram(df)
