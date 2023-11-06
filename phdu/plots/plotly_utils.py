@@ -153,7 +153,7 @@ def set_multicategory_from_df(fig, df):
     fig.data[0]["y"] = multiindex_to_label(df.index)
     return
 
-def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', color_sample_stat="green", width_sample_stat=8,  fig=None, x_title=None, y_title=None, color_legend=None, **fig_kwargs):
+def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', color_sample_stat="green", width_sample_stat=8,  fig=None, x_title=None, y_title=None, color_legend=None, plot_stat_for_nan_CI=True, **fig_kwargs):
     """
     Box plot where the box corresponds to the CI.
 
@@ -175,6 +175,8 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
             fig.add_trace(go.Scatter(x=[i]*2, y=ci[::-1], showlegend=False, mode="markers",
                                      marker=dict(color=color, symbol=["arrow-bar-down", "arrow-bar-up"], size=ms, line=dict(color="gray", width=2))
                                 ))
+        elif plot_stat_for_nan_CI:
+            fig.add_shape(type="line", xref="x", yref="y", line=dict(color=color_sample_stat, width=width_sample_stat),  x0=i-width, y0=ci_stat, x1=i+width, y1=ci_stat)
 
         fig.update_layout(xaxis=dict(tickvals=[*idx_to_xlabel.keys()], ticktext=[*idx_to_xlabel.values()]))
     if label is not None:
