@@ -91,7 +91,7 @@ def fig_base_layout(ticksize=32, **kwargs):
     base.update(kwargs)
     return base
 
-def get_figure(height=800, width=1000, ticksize=32, font_size=40, margin=None, font_family="sans-serif", hovermode=False, delete_axes=False, simple_axes=False, **kwargs):
+def get_figure(height=800, width=1000, ticksize=32, font_size=40, margin=None, font_family="sans-serif", hovermode=False, delete_axes=False, simple_axes=True, **kwargs):
     """
     Attributes:
     - delete_axes:   delete axes and gridlines
@@ -104,7 +104,7 @@ def get_figure(height=800, width=1000, ticksize=32, font_size=40, margin=None, f
     if delete_axes:
         fig.update_layout(**mod_delete_axes(fig), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     elif simple_axes:
-        fig.update_layout(**mod_simple_axes(fig), plot_bgcolor='white')
+        fig.update_layout(**mod_simple_axes(fig), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
     return fig
 
 def subplots_base_layout(cols, rows=1, make_subplots_kwargs={}, **layout_kwargs):
