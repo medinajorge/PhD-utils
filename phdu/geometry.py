@@ -24,7 +24,7 @@ def is_point_inside_polygon(point, polygon):
                     if p1y != p2y:
                         xints = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
                     else:
-                        xints = x.copy() # handle horizontal lines
+                        xints = x # handle horizontal lines
                     if p1x == p2x or x <= xints:
                         inside = not inside
         p1x, p1y = p2x, p2y
