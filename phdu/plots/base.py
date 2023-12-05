@@ -5,7 +5,7 @@ import numpy as np
 from colour import Color
 from PIL import ImageColor
 from .. import _helper
-        
+
 def rows_cols(nrows, ncols):
     rows, cols = (np.vstack(np.divmod(range(nrows*ncols), ncols)) + 1)
     return rows, cols
@@ -59,6 +59,30 @@ def plotly_colors(maxlen=None):
     li = [l.replace('\n','') for l in li]
     li = [l.replace(' ','') for l in li]
     return _helper.sequence_or_stream(li, maxlen=maxlen)
+
+def show_plotly_colors():
+    import pandas as pd
+    import plotly.graph_objects as go
+
+    li = plotly_colors()
+    li = [l for l in li]
+
+    df=pd.DataFrame.from_dict({'colour': li})
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=["Plotly Named CSS colours"],
+            line_color='black', fill_color='white',
+            align='center', font=dict(color='black', size=14)
+        ),
+        cells=dict(
+            values=[df.colour],
+            line_color=[df.colour], fill_color=[df.colour],
+            align='center', font=dict(color='black', size=11)
+        ))
+                          ])
+
+    fig.show()
+    return
 
 def color_gradient(start, end, n, to_hex=True):
     colors = [*Color(start).range_to(Color(end), n)]
