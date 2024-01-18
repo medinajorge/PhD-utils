@@ -189,12 +189,9 @@ def resample_block_nb(X, Y, func, output_len=1, R=int(1e4), R_B=int(1e3), seed=0
 #             boot_sample[idx_start + j] = func(Xij, Yij)
 #     return boot_sample
 
-def resample(X, func, output_len=1, R=int(1e4), seed=0):
+def resample(X, func, output_len=1, R=int(1e4), seed=0, smooth=False, N=0):
     """X: array of shape (N_samples, n_vars)."""
-    np.random.seed(seed)
-    N = X.shape[0]
-    idxs_resampling = np.random.randint(low=0, high=N, size=R*N)
-    data_resampled = X[idxs_resampling].reshape(R, N, X.shape[1])
+    data_resampled = resample_nb_X(X, R=R, seed=seed, smooth=smooth, N=N)
 
     boot_sample = np.empty((R, output_len))
     for i, r in enumerate(data_resampled):
