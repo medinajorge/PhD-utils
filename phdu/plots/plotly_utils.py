@@ -328,3 +328,30 @@ def plot_cs(cs):
     else:
         c = cs
     return HTML(cl.to_html(cl.to_hsl(c)))
+
+def plot_confidence_bands(fig, x, y, CI, label=None, color='#1f77b4', lw=6, opacity=0.3):
+    """
+    Plots a curve with confidence intervals as bands.
+
+    Parameters:
+    - fig: The figure object to which the traces will be added.
+    - x: The x-coordinates of the data points.
+    - y: The y-coordinates of the data points (mean values).
+    - CI: 2D array of confidence interval data, where CI[:, 0] is the lower bound and CI[:, 1] is the upper bound.
+    - color: (Optional) The color of the plot. Default is blue.
+    """
+
+    # Plot the main line (mean curve)
+    fig.add_trace(go.Scatter(x=x, y=y, line=dict(width=lw, color=color), name=label, showlegend=label is not None))
+
+    # Plot the confidence interval as a band
+    fig.add_trace(go.Scatter(
+        x=np.hstack([x, x[::-1]]), # x, then x reversed
+        y=np.hstack([CI[:, 0], CI[:, 1][::-1]]), # upper CI, then lower CI reversed
+        fill='toself',
+        fillcolor=color,
+        line=dict(color=color, width=0),
+        opacity=opacity,
+        showlegend=False,
+    ))
+    return
