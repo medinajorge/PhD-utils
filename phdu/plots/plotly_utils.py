@@ -329,7 +329,7 @@ def plot_cs(cs):
         c = cs
     return HTML(cl.to_html(cl.to_hsl(c)))
 
-def plot_confidence_bands(fig, x, y, CI, label=None, color='#1f77b4', lw=6, opacity=0.3):
+def plot_confidence_bands(fig, x, y, CI, label=None, color='#1f77b4', lw=6, opacity=0.3, **kwargs):
     """
     Plots a curve with confidence intervals as bands.
 
@@ -339,10 +339,12 @@ def plot_confidence_bands(fig, x, y, CI, label=None, color='#1f77b4', lw=6, opac
     - y: The y-coordinates of the data points (mean values).
     - CI: 2D array of confidence interval data, where CI[:, 0] is the lower bound and CI[:, 1] is the upper bound.
     - color: (Optional) The color of the plot. Default is blue.
+    - lw: (Optional) The line width of the plot. Default is 6.
+    - opacity: (Optional) The opacity of the confidence interval band. Default is 0.3.
+    - kwargs: (Optional) Additional keyword arguments to be passed to the plotly go.Scatter function, both for the mean curve and the confidence interval band.
     """
-
     # Plot the main line (mean curve)
-    fig.add_trace(go.Scatter(x=x, y=y, line=dict(width=lw, color=color), name=label, showlegend=label is not None))
+    fig.add_trace(go.Scatter(x=x, y=y, line=dict(width=lw, color=color), name=label, showlegend=label is not None, **kwargs))
 
     # Plot the confidence interval as a band
     fig.add_trace(go.Scatter(
@@ -353,5 +355,6 @@ def plot_confidence_bands(fig, x, y, CI, label=None, color='#1f77b4', lw=6, opac
         line=dict(color=color, width=0),
         opacity=opacity,
         showlegend=False,
+        **kwargs
     ))
     return
