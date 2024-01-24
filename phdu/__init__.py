@@ -8,6 +8,7 @@ from . import stats
 from . import decomposition
 from . import clustering
 from . import geometry
+from . import analysis
 from .stats import bootstrap, conf_interval
 from .stats.rtopy import resample
 from .stats.test import permutation
