@@ -244,6 +244,30 @@ def CI_ss_plot(df, label=False, width=0.05, ms=10, ns_color='#323232', ss_lower_
     return fig
 
 def CI_bar_plot(df, *, x, group, base, y_label, group_order=None, x_order=None, width=0.5, y_range=[0, 1], baseline_in_legend=True, default_x_order='descending', default_group_order='descending'):
+    """
+    This function creates a bar plot with confidence intervals (CI) for a given DataFrame. For each 'x' value, the plot shows a bar for each 'group' value, with the height of the bar representing the sample statistic and the CI represented by the error bars. The baseline value is also plotted as a gray bar.
+
+    Parameters:
+    df (pandas.DataFrame): The DataFrame containing the data to be plotted. Must have columns for 'x', 'group', 'sample_stat', 'CI', and 'base'.
+    x (str): The column name in df to be used as the x-axis.
+    group (str): The column name in df to be used for grouping the data.
+    base (str): The column name in df to be used as the baseline for the plot.
+    y_label (str): The label to be used for the y-axis.
+    group_order (list, optional): The order in which the groups should be plotted. If not provided, groups are ordered based on their mean values.
+    x_order (list, optional): The order in which the x-axis values should be plotted. If not provided, x-axis values are ordered based on their mean values.
+    width (float, optional): The width of the bars in the plot. Default is 0.5.
+    y_range (list, optional): The range of the y-axis. Default is [0, 1].
+    baseline_in_legend (bool, optional): Whether to include the baseline in the legend. Default is True.
+    default_x_order (str, optional): The default order for the x-axis values if x_order is not provided. Can be 'ascending' or 'descending'. Default is 'descending'.
+    default_group_order (str, optional): The default order for the groups if group_order is not provided. Can be 'ascending' or 'descending'. Default is 'descending'.
+
+    Returns:
+    plotly.graph_objs._figure.Figure: The resulting bar plot with confidence intervals.
+
+    Raises:
+    AssertionError: If group_order is not a subset of the unique values in df[group].
+    AssertionError: If x_order is not a subset of the unique values in df[x].
+    """
     def label_fmt(x):
         if x == x.upper():
             return x
