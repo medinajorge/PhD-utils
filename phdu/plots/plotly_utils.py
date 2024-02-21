@@ -19,7 +19,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 from functools import partial
 from .. import _helper
-from .base import color_std, plotly_default_colors
+from .base import color_std, plotly_default_colors, color_gradient
 
 def add_offset(x0, xf, offset=0.05):
     """x0 (xf) == lower (upper) limit for the axis range."""
@@ -153,7 +153,7 @@ def set_multicategory_from_df(fig, df):
     fig.data[0]["y"] = multiindex_to_label(df.index)
     return
 
-def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', color_sample_stat="green", width_sample_stat=8,  fig=None, x_title=None, y_title=None, color_legend=None, plot_stat_for_nan_CI=True, **fig_kwargs):
+def CI_plot(*, df=None, x=None, y=None, CI=None, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0.3)', color_sample_stat="green", width_sample_stat=8,  fig=None, x_title=None, y_title=None, color_legend=None, plot_stat_for_nan_CI=True, **fig_kwargs):
     """
     Box plot where the box corresponds to the CI.
 
@@ -162,6 +162,11 @@ def CI_plot(x, y, CI, label=None, width=0.05, ms=10, color='rgba(255, 127, 14, 0
         - y:    value of the magnitude for the sample. Example: the mean if CI is a CI for the mean.
         - CI:   Confidence interval for y.
     """
+    if df is not None:
+        x = df.index.tolist()
+        y = df.sample_stat.values
+        CI = np.vstack(df.CI.values)
+
     if fig is None:
         fig = get_figure(xaxis_title=x_title, yaxis_title=y_title, **fig_kwargs)
     if color_legend is None:
@@ -209,13 +214,13 @@ def CI_ss_plot(df, label=False, width=0.05, ms=10, ns_color='#323232', ss_lower_
     df_ss_upper['CI'] = map_to_nan(cis, ~ss_upper).tolist()
     df_ss_lower['CI'] = map_to_nan(cis, ~ss_lower).tolist()
     # NS intervals
-    fig = CI_plot(df_ns.index, df_ns['sample stat'].values, np.vstack(df_ns['CI'].values), width=width, ms=ms, color=color_std(ns_color, opacity=0.55), label='Not SS' if label else None,
+    fig = CI_plot(df=df_ns, width=width, ms=ms, color=color_std(ns_color, opacity=0.55), label='Not SS' if label else None,
                   color_sample_stat=color_sample_stat, width_sample_stat=width_sample_stat,
                   **CI_plot_kwargs)
     # Adding significant intervals
     figdata = {'SS (>0)': (df_ss_upper, ss_upper_color), 'SS (<0)': (df_ss_lower, ss_lower_color)}
     for label_ss, (df_ss, ss_color) in figdata.items():
-        fig = CI_plot(df_ss.index, df_ss['sample stat'].values, np.vstack(df_ss['CI'].values), width=width, ms=ms, fig=fig, color=color_std(ss_color, opacity=0.2), label=label_ss if label else None, color_sample_stat=color_sample_stat, width_sample_stat=width_sample_stat)
+        fig = CI_plot(df=df_ss, width=width, ms=ms, fig=fig, color=color_std(ss_color, opacity=0.2), label=label_ss if label else None, color_sample_stat=color_sample_stat, width_sample_stat=width_sample_stat)
     # colorizing the index
     def colorize(index_upper, index_lower):
         """
@@ -236,6 +241,64 @@ def CI_ss_plot(df, label=False, width=0.05, ms=10, ns_color='#323232', ss_lower_
     fig.update_layout(plot_bgcolor='white', yaxis=dict(showline=True, linecolor='black', linewidth=2.4),
                       xaxis=dict(showline=True, linecolor='black', linewidth=2.4))
     fig.add_hline(y=0, line=dict(color='black', width=1, dash='dash'))
+    return fig
+
+def CI_bar_plot(df, *, x, group, base, y_label, group_order=None, x_order=None, width=0.5, y_range=[0, 1], baseline_in_legend=True, default_x_order='descending', default_group_order='descending'):
+    def label_fmt(x):
+        if x == x.upper():
+            return x
+        else:
+            return x.capitalize()
+
+    def get_order(df, column, default_order):
+        if default_order == 'ascending':
+            return df.groupby(column)['sample_stat'].mean().sort_values(ascending=True).index
+        elif default_order == 'descending':
+            return df.groupby(column)['sample_stat'].mean().sort_values(ascending=False).index
+        else:
+            return np.unique(df[column].values)
+    group_order = get_order(df, group, default_group_order)
+    x_order = get_order(df, x, default_x_order)
+
+    assert set(df[group].values) >= set(group_order), f"group_order must be a subset of the unique values in df['{group}']"
+    assert set(df[x].values) >= set(x_order), f"x_order must be a subset of the unique values in df['{x}']"
+
+    X = np.arange(df.index.size)
+    num_groups = len(group_order)
+    width /= num_groups
+    X0 = X - (num_groups-1)*width
+
+    if num_groups > 2:
+        color_gen = plotly_default_colors()
+    else:
+        color_gen = plotly_default_colors(4)[1:]
+    colors = {k: c for k, c in zip(group_order, color_gen)}
+
+    fig = get_figure(xaxis_title=label_fmt(x), yaxis_title=label_fmt(y_label))
+    xaxis_ticktext = []
+    for i, idx in enumerate(x_order):
+        df_i = df[df[x] == idx]
+        xaxis_ticktext.append(idx)
+        for j, g in enumerate(group_order):
+            color_g = colors[g]
+            Xj = X0[i] + j*width
+            df_g = df_i[df_i[group] == g].iloc[0]
+            y = df_g.sample_stat
+            CI = df_g.CI.squeeze()
+            baseline = df_g[base]
+            error_up = np.clip(CI[1], *y_range) - y
+            error_down = y - np.clip(CI[0], *y_range)
+            # plot bars
+            fig.add_trace(go.Bar(x=[Xj], y=[y], name=label_fmt(g), marker=dict(color=color_g), width=width, showlegend=i == 0))
+            fig.add_trace(go.Bar(x=[Xj], y=[baseline], name=label_fmt(base), marker=dict(color='grey'), width=width, showlegend=baseline_in_legend and i == 0 and j == (num_groups-1)))
+            # plot error
+            fig.add_trace(go.Scatter(x=[Xj], y=[y], error_y=dict(type='data', array=[error_up], arrayminus=[error_down], color=color_gradient(color_g, 'black', 6)[1], width=4, thickness=3), mode='markers', marker=dict(color=color_g, size=0.5), showlegend=False))
+
+    fig.update_layout(yaxis_range=y_range, barmode='overlay',
+                      xaxis=dict(tickvals=np.vstack((X, X0)).mean(axis=0),
+                                 ticktext=xaxis_ticktext,
+                                 tickangle=90),
+                     legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
     return fig
 
 def permtest_plot(df, H1="", colorscale="Inferno", log=True, height=800, width=1000, font_size=40, bar_len=0.9, bar_x=0.95, bar_thickness=100):
