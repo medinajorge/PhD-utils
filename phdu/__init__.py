@@ -12,5 +12,5 @@ from . import analysis
 from .stats import bootstrap, conf_interval
 from .stats.rtopy import resample
 from .stats.test import permutation
-from .storage import delete_stdin_files
+from .storage import delete_stdin_files, current_process_memory_usage
 from .script_fmt import getopt_printer, incompleted_programs_shell_script
