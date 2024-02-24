@@ -1,11 +1,20 @@
 """
-Move/delete data
+Move/delete data. Access memory usage of current process
 """
 import os
 from pathlib import Path
 import re
+import psutil
 
 parent_dir =  'data'
+
+
+def current_process_memory_usage():
+    """
+    Returns the memory used by the current process in GB.
+    """
+    current_process = psutil.Process()
+    return current_process.memory_info().rss / 2**30
 
 def move_files(keyword, folder=None, parent_dir=parent_dir, verbose=1):
     """
