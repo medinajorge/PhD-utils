@@ -243,7 +243,7 @@ def CI_ss_plot(df, label=False, width=0.05, ms=10, ns_color='#323232', ss_lower_
     fig.add_hline(y=0, line=dict(color='black', width=1, dash='dash'))
     return fig
 
-def CI_bar_plot(df, *, x, group, base, y_label, group_order=None, x_order=None, width=0.5, y_range=[0, 1], baseline_in_legend=True, default_x_order='descending', default_group_order='descending'):
+def CI_bar_plot(df, *, x, group, base, y_label, group_order=None, x_order=None, width=0.5, y_range=[0, 1], baseline_in_legend=True, default_x_order='descending', default_group_order='descending', format_label=True):
     """
     This function creates a bar plot with confidence intervals (CI) for a given DataFrame. For each 'x' value, the plot shows a bar for each 'group' value, with the height of the bar representing the sample statistic and the CI represented by the error bars. The baseline value is also plotted as a gray bar.
 
@@ -268,11 +268,14 @@ def CI_bar_plot(df, *, x, group, base, y_label, group_order=None, x_order=None, 
     AssertionError: If group_order is not a subset of the unique values in df[group].
     AssertionError: If x_order is not a subset of the unique values in df[x].
     """
-    def label_fmt(x):
-        if x == x.upper():
-            return x
-        else:
-            return x.capitalize()
+    if format_label:
+        def label_fmt(x):
+            if x == x.upper():
+                return x
+            else:
+                return x.capitalize()
+    else:
+        label_fmt = lambda x: x
 
     def get_order(df, column, default_order):
         if default_order == 'ascending':
