@@ -307,19 +307,20 @@ def CI_bar_plot(df, *, x, group, base, y_label, group_order=None, x_order=None, 
         df_i = df[df[x] == idx]
         xaxis_ticktext.append(idx)
         for j, g in enumerate(group_order):
-            color_g = colors[g]
-            Xj = X0[i] + j*width
-            df_g = df_i[df_i[group] == g].iloc[0]
-            y = df_g.sample_stat
-            CI = df_g.CI.squeeze()
-            baseline = df_g[base]
-            error_up = np.clip(CI[1], *y_range) - y
-            error_down = y - np.clip(CI[0], *y_range)
-            # plot bars
-            fig.add_trace(go.Bar(x=[Xj], y=[y], name=label_fmt(g), marker=dict(color=color_g), width=width, showlegend=i == 0))
-            fig.add_trace(go.Bar(x=[Xj], y=[baseline], name=label_fmt(base), marker=dict(color='grey'), width=width, showlegend=baseline_in_legend and i == 0 and j == (num_groups-1)))
-            # plot error
-            fig.add_trace(go.Scatter(x=[Xj], y=[y], error_y=dict(type='data', array=[error_up], arrayminus=[error_down], color=color_gradient(color_g, 'black', 6)[1], width=4, thickness=3), mode='markers', marker=dict(color=color_g, size=0.5), showlegend=False))
+            if g in df_i[group].values:
+                color_g = colors[g]
+                Xj = X0[i] + j*width
+                df_g = df_i[df_i[group] == g].iloc[0]
+                y = df_g.sample_stat
+                CI = df_g.CI.squeeze()
+                baseline = df_g[base]
+                error_up = np.clip(CI[1], *y_range) - y
+                error_down = y - np.clip(CI[0], *y_range)
+                # plot bars
+                fig.add_trace(go.Bar(x=[Xj], y=[y], name=label_fmt(g), marker=dict(color=color_g), width=width, showlegend=i == 0))
+                fig.add_trace(go.Bar(x=[Xj], y=[baseline], name=label_fmt(base), marker=dict(color='grey'), width=width, showlegend=baseline_in_legend and i == 0 and j == (num_groups-1)))
+                # plot error
+                fig.add_trace(go.Scatter(x=[Xj], y=[y], error_y=dict(type='data', array=[error_up], arrayminus=[error_down], color=color_gradient(color_g, 'black', 6)[1], width=4, thickness=3), mode='markers', marker=dict(color=color_g, size=0.5), showlegend=False))
 
     fig.update_layout(yaxis_range=y_range, barmode='overlay',
                       xaxis=dict(tickvals=np.vstack((X, X0)).mean(axis=0),
