@@ -284,8 +284,10 @@ def CI_bar_plot(df, *, x, group, base, y_label, group_order=None, x_order=None, 
             return df.groupby(column)['sample_stat'].mean().sort_values(ascending=False).index
         else:
             return np.unique(df[column].values)
-    group_order = get_order(df, group, default_group_order)
-    x_order = get_order(df, x, default_x_order)
+    if group_order is None:
+        group_order = get_order(df, group, default_group_order)
+    if x_order is None:
+        x_order = get_order(df, x, default_x_order)
 
     assert set(df[group].values) >= set(group_order), f"group_order must be a subset of the unique values in df['{group}']"
     assert set(df[x].values) >= set(x_order), f"x_order must be a subset of the unique values in df['{x}']"
