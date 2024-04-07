@@ -65,15 +65,17 @@ def expand_sequences(df, dt=1, maxlen=None):
                         index = df.index,
                         columns = pd.MultiIndex.from_product([df.columns, dt*np.arange(maxlen)]))
 
+def _ensure_df(dfs):
+    dfs = [df.to_frame() if isinstance(df, pd.Series) else df for df in dfs]
+    return dfs
+
 def tuple_wise(*dfs):
     """
     Attributes: Dataframes with same indices and columns. If the input are Series, they are converted to DataFrames.
 
     Returns dataframe where each element is a tuple containing the elements from other dataframes.
     """
-    for df in dfs:
-        if isinstance(df, pd.Series):
-            df = df.to_frame()
+    dfs = _ensure_df(dfs)
     df = dfs[0]
     assert all(df.index.intersection(df2.index).size == df.shape[0] for df2 in dfs[1:])
     assert all(df.columns.intersection(df2.columns).size == df.shape[1] for df2 in dfs[1:])
@@ -87,9 +89,7 @@ def vstack_wise(*dfs):
 
     Returns: DataFrame where df_ij = np.vstack((df1_ij, df2_ij, ...))
     """
-    for df in dfs:
-        if isinstance(df, pd.Series):
-            df = df.to_frame()
+    dfs = _ensure_df(dfs)
     R = np.rec.fromarrays(tuple(df.values for df in dfs))
     df1_df2 = pd.Series([np.vstack(i) if all(isinstance(j, np.ndarray) for j in i) else np.NaN for i in R.flatten()], dtype=object,
                         index=dfs[0].stack(dropna=False).index).unstack()
