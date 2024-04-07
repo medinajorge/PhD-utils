@@ -3,7 +3,7 @@ pandas utils
 """
 import pandas as pd
 import numpy as np
-from functools import reduce     
+from functools import reduce
 from .stats.rtopy import resample
 from .stats.test import permutation
 
@@ -16,7 +16,7 @@ def latex_table(df, index=False, **kwargs):
                           ("\\bottomrule", "\\bottomrule "*2)
     )
     text_replacements = (("\\textbackslash ", "\\"),
-                         ("\{", "{"), 
+                         ("\{", "{"),
                          ("\}", "}"),
                          ("\$", "$"),
                          ("\_", "_"),
@@ -32,7 +32,7 @@ def insert_level_sep(df, row_seps=1, col_seps=1):
     """
     Insert NaN rows and cols when the outer level of the MultiIndex changes.
     Example for three columns with col_seps=1:   c1, c2, c3    =>   c1, NANs, c2, NaNs, c3.
-    
+
     This is useful when plotting a matrix and you want to visually separate different groups.
     """
     df_c = df.copy()
@@ -40,7 +40,7 @@ def insert_level_sep(df, row_seps=1, col_seps=1):
     row_levels = df.index.get_level_values(0).unique()
     for l in col_levels[:-1]:
         for k in range(col_seps):
-            df_c[(l, " "*k)] = np.NaN 
+            df_c[(l, " "*k)] = np.NaN
     for l in row_levels[:-1]:
         for k in range(row_seps):
             df_c.loc[(l, " "*k), :] = np.NaN
@@ -49,7 +49,7 @@ def insert_level_sep(df, row_seps=1, col_seps=1):
 def expand_sequences(df, dt=1, maxlen=None):
     """
     Input: DataFrame. Each element is an array and all arrays start at the same time and have the same time step dt.
-    
+
     Returns: MultiColumn DataFrame: (df.index,  (df.columns, time_steps))
     """
     if df.isna().values.any():
@@ -61,25 +61,35 @@ def expand_sequences(df, dt=1, maxlen=None):
             maxlen = int(df.applymap(lambda x: x.size).values.max())
         df_padded = df.applymap(lambda x: np.hstack((x, np.NaN*np.empty((maxlen-x.size)))))
     df_padded_arr = np.stack([np.vstack(x) for x in df_padded.values]) # shape (df.shape[0], df.shape[1], time_steps)
-    return pd.DataFrame(df_padded_arr.reshape((df.shape[0], -1)), 
-                        index = df.index, 
+    return pd.DataFrame(df_padded_arr.reshape((df.shape[0], -1)),
+                        index = df.index,
                         columns = pd.MultiIndex.from_product([df.columns, dt*np.arange(maxlen)]))
 
 def tuple_wise(*dfs):
-    """Returns dataframe where each element is a tuple containing the elements from other dataframes."""
+    """
+    Attributes: Dataframes with same indices and columns. If the input are Series, they are converted to DataFrames.
+
+    Returns dataframe where each element is a tuple containing the elements from other dataframes.
+    """
+    for df in dfs:
+        if isinstance(df, pd.Series):
+            df = df.to_frame()
     df = dfs[0]
     assert all(df.index.intersection(df2.index).size == df.shape[0] for df2 in dfs[1:])
     assert all(df.columns.intersection(df2.columns).size == df.shape[1] for df2 in dfs[1:])
-    return pd.DataFrame(np.rec.fromarrays(tuple(df.values for df in dfs)).tolist(), 
+    return pd.DataFrame(np.rec.fromarrays(tuple(df.values for df in dfs)).tolist(),
                         columns=df.columns,
                         index=df.index)
 
 def vstack_wise(*dfs):
     """
-    Attributes: Dataframes where elements are arrays with equal length and have same indices and columns.
-    
+    Attributes: Dataframes where elements are arrays with equal length and have same indices and columns. If the input are Series, they are converted to DataFrames.
+
     Returns: DataFrame where df_ij = np.vstack((df1_ij, df2_ij, ...))
     """
+    for df in dfs:
+        if isinstance(df, pd.Series):
+            df = df.to_frame()
     R = np.rec.fromarrays(tuple(df.values for df in dfs))
     df1_df2 = pd.Series([np.vstack(i) if all(isinstance(j, np.ndarray) for j in i) else np.NaN for i in R.flatten()], dtype=object,
                         index=dfs[0].stack(dropna=False).index).unstack()
@@ -96,7 +106,7 @@ def column_diffs(df, mode="to", mod_col=lambda x: "".join(np.array([*x])[[0, -1]
         label = lambda col1, col2: f"{col2} - {col1}"
     elif mode == "to":
         if callable(mod_col):
-            label = lambda col1, col2: r"$\Huge {{{}}} \to {{{}}}$".format(mod_col(col1.replace(" ", "\ ")), mod_col(col2.replace(" ", "\ ")))            
+            label = lambda col1, col2: r"$\Huge {{{}}} \to {{{}}}$".format(mod_col(col1.replace(" ", "\ ")), mod_col(col2.replace(" ", "\ ")))
         else:
             label = lambda col1, col2: r"$\Huge {{{}}} \to {{{}}}$".format(col1.replace(" ", "\ "), col2.replace(" ", "\ "))
     for i, col1 in enumerate(df.columns):
@@ -116,12 +126,12 @@ def CI_by_col(df, stat, return_sample_stat=True, fillna=None, **kwargs):
         return CI, getattr(df, stat)()
     else:
         return CI
-    
+
 def permtest_by_col(df, alternative, stat="mean", paired=True, diff=True, label="c", **kwargs):
     """
-    Test directionality accross columns. 
-        col_i  (direction in [<, >, !=])  col_j     
-        
+    Test directionality accross columns.
+        col_i  (direction in [<, >, !=])  col_j
+
     Attributes:
         alternative:    'less', 'greater', 'two-sided'.
     """
