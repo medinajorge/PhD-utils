@@ -422,22 +422,30 @@ def plot_cs(cs):
         c = cs
     return HTML(cl.to_html(cl.to_hsl(c)))
 
-def plot_confidence_bands(fig, x, y, CI, label=None, color='#1f77b4', lw=6, opacity=0.3, **kwargs):
+def plot_confidence_bands(*, fig=None, df=None, x=None, y=None, CI=None, label=None, color='#1f77b4', lw=6, opacity=0.3, **fig_kwargs):
     """
     Plots a curve with confidence intervals as bands.
 
     Parameters:
-    - fig: The figure object to which the traces will be added.
+    - fig: The figure object to which the traces will be added. If None, a new figure will be created with specs from fig_kwargs.
+    - df: (Optional) The DataFrame containing the data to be plotted. Must contain columns 'sample_stat' and 'CI', and the index will be used as the x-coordinates.
     - x: The x-coordinates of the data points.
     - y: The y-coordinates of the data points (mean values).
     - CI: 2D array of confidence interval data, where CI[:, 0] is the lower bound and CI[:, 1] is the upper bound.
     - color: (Optional) The color of the plot. Default is blue.
     - lw: (Optional) The line width of the plot. Default is 6.
     - opacity: (Optional) The opacity of the confidence interval band. Default is 0.3.
-    - kwargs: (Optional) Additional keyword arguments to be passed to the plotly go.Scatter function, both for the mean curve and the confidence interval band.
+    - fig_kwargs: (Optional) Additional keyword arguments to be passed to the get_figure function.
     """
+    if fig is None:
+        fig = get_figure(**fig_kwargs)
+    if df is not None:
+        x = df.index
+        y = df.sample_stat.values
+        CI = np.vstack(df.CI.values)
+
     # Plot the main line (mean curve)
-    fig.add_trace(go.Scatter(x=x, y=y, line=dict(width=lw, color=color), name=label, showlegend=label is not None, **kwargs))
+    fig.add_trace(go.Scatter(x=x, y=y, line=dict(width=lw, color=color), name=label, showlegend=label is not None))
 
     # Plot the confidence interval as a band
     fig.add_trace(go.Scatter(
@@ -448,6 +456,5 @@ def plot_confidence_bands(fig, x, y, CI, label=None, color='#1f77b4', lw=6, opac
         line=dict(color=color, width=0),
         opacity=opacity,
         showlegend=False,
-        **kwargs
     ))
     return
