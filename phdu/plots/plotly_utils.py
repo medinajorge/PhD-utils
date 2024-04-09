@@ -422,7 +422,7 @@ def plot_cs(cs):
         c = cs
     return HTML(cl.to_html(cl.to_hsl(c)))
 
-def plot_confidence_bands(*, fig=None, df=None, x=None, y=None, CI=None, label=None, color='#1f77b4', lw=6, opacity=0.3, **fig_kwargs):
+def plot_confidence_bands(*, fig=None, df=None, x=None, y=None, CI=None, label=None, color='#1f77b4', lw=6, opacity=0.3, line_specs={}, **fig_kwargs):
     """
     Plots a curve with confidence intervals as bands.
 
@@ -437,7 +437,8 @@ def plot_confidence_bands(*, fig=None, df=None, x=None, y=None, CI=None, label=N
     - opacity: (Optional) The opacity of the confidence interval band. Default is 0.3.
     - fig_kwargs: (Optional) Additional keyword arguments to be passed to the get_figure function.
     """
-    if fig is None:
+    input_fig = fig is not None
+    if not input_fig:
         fig = get_figure(**fig_kwargs)
     if df is not None:
         x = df.index
@@ -445,7 +446,7 @@ def plot_confidence_bands(*, fig=None, df=None, x=None, y=None, CI=None, label=N
         CI = np.vstack(df.CI.values)
 
     # Plot the main line (mean curve)
-    fig.add_trace(go.Scatter(x=x, y=y, line=dict(width=lw, color=color), name=label, showlegend=label is not None))
+    fig.add_trace(go.Scatter(x=x, y=y, line=dict(width=lw, color=color, **line_specs), name=label, showlegend=label is not None))
 
     # Plot the confidence interval as a band
     fig.add_trace(go.Scatter(
@@ -457,4 +458,7 @@ def plot_confidence_bands(*, fig=None, df=None, x=None, y=None, CI=None, label=N
         opacity=opacity,
         showlegend=False,
     ))
-    return fig
+    if not input_fig:
+        return fig
+    else:
+        return
