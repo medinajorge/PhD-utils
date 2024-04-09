@@ -457,4 +457,4 @@ def plot_confidence_bands(*, fig=None, df=None, x=None, y=None, CI=None, label=N
         opacity=opacity,
         showlegend=False,
     ))
-    return
+    return fig
