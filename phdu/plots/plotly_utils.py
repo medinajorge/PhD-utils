@@ -243,7 +243,7 @@ def CI_ss_plot(df, label=False, width=0.05, ms=10, ns_color='#323232', ss_lower_
     fig.add_hline(y=0, line=dict(color='black', width=1, dash='dash'))
     return fig
 
-def CI_bar_plot(df, *, x, group, base, y_label, group_order=None, x_order=None, width=0.5, y_range=[0, 1], baseline_in_legend=True, default_x_order='descending', default_group_order='descending', format_label=True):
+def CI_bar_plot(df, *, x, group, base, y_label, color=None, group_order=None, x_order=None, width=0.5, y_range=[0, 1], baseline_in_legend=True, default_x_order='descending', default_group_order='descending', format_label=True):
     """
     This function creates a bar plot with confidence intervals (CI) for a given DataFrame. For each 'x' value, the plot shows a bar for each 'group' value, with the height of the bar representing the sample statistic and the CI represented by the error bars. The baseline value is also plotted as a gray bar.
 
@@ -297,11 +297,17 @@ def CI_bar_plot(df, *, x, group, base, y_label, group_order=None, x_order=None, 
     width /= num_groups
     X0 = X - (num_groups-1)*width
 
-    if num_groups > 2:
-        color_gen = plotly_default_colors()
+    if color is not None:
+        if isinstance(color, str) and color in df.columns:
+            colors = df.set_index(group_order)[color].to_dict()
+        else:
+            colors = {g: c for g, c in zip(group_order, color)}
     else:
-        color_gen = plotly_default_colors(4)[1:]
-    colors = {k: c for k, c in zip(group_order, color_gen)}
+        if num_groups > 2:
+            color_gen = plotly_default_colors()
+        else:
+            color_gen = plotly_default_colors(4)[1:]
+        colors = {k: c for k, c in zip(group_order, color_gen)}
 
     fig = get_figure(xaxis_title=label_fmt(x), yaxis_title=label_fmt(y_label))
     xaxis_ticktext = []
