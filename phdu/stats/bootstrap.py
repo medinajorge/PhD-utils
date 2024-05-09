@@ -220,6 +220,18 @@ def resample_block(X, Y, func, output_len=1, R=int(1e5), seed=0):
         boot_sample[i] = func(Xi, Yi)
     return boot_sample
 
+@njit
+def jackknife_resampling_tuple(data):
+    """
+    Jackknife resampling for tuples of numpy arrays.
+    """
+    n = len(data)
+    resamples = []
+    idxs = np.arange(n)
+    for i in range(n):
+        valid_idxs = np.delete(idxs, i)
+        resamples.append([data[j] for j in valid_idxs])
+    return resamples
 
 @njit
 def jackknife_resampling(data):
@@ -250,11 +262,24 @@ def jackknife_stat_nb(data, statistic):
     stats = np.array([statistic(r) for r in resamples])
     return stats
 
-def jackknife_stat_two_samples(data, data2, statistic):
-    jk_X = jackknife_resampling(data)
-    jk_Y = jackknife_resampling(data2)
-    jk_XY = [*product(jk_X, jk_Y)]
-    stats = np.array([statistic(*r) for r in jk_XY])
+def jackknife_stat_two_samples(data, data2, statistic, aggregator=None):
+    if isinstance(data, np.ndarray): # not block
+        jk_X = jackknife_resampling(data)
+        jk_Y = jackknife_resampling(data2)
+        jk_XY = [*product(jk_X, jk_Y)]
+        stats = np.array([statistic(*r) for r in jk_XY])
+    elif isinstance(data, tuple): # block
+        jk_X = jackknife_resampling_tuple(data)
+        jk_Y = jackknife_resampling_tuple(data2)
+        jk_XY = product(jk_X, jk_Y)
+        if aggregator is None:
+            stats = np.array([statistic(*r) for r in jk_XY])
+        else:
+            def _preprocess(x):
+                return np.array([aggregator(xi) for xi in x])
+            stats = np.array([statistic(_preprocess(x), _preprocess(y)) for x, y in jk_XY])
+    else:
+        raise ValueError("data must be a tuple or np.ndarray.")
     return stats
 
 def jackknife_stat_(data, statistic):
@@ -394,7 +419,7 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
         jackknife_computer = jackknife_stat_nb if use_numba else jackknife_stat
         theta_hat_jk = jackknife_computer(data, statistic)  # jackknife resample
     else:
-        theta_hat_jk = jackknife_stat_two_samples(data, data2, statistic)
+        theta_hat_jk = jackknife_stat_two_samples(data, data2, statistic, aggregator=aggregator)
     n = theta_hat_jk.shape[0]
     theta_hat_jk_dot = theta_hat_jk.mean(axis=0)
 
