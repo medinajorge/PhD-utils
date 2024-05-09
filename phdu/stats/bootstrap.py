@@ -333,7 +333,8 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, aggre
             data = tuple([data[i] for i in idxs_common_blocks])
             data2 = tuple([data2[i] for i in idxs_common_blocks])
             sample_stat = statistic(np.array([aggregator(di) for di in data]), np.array([aggregator(di) for di in data2]))
-            N = len(data) # number of blocks
+            N = min(min([len(d) for d in data]),
+                    min([len(d) for d in data2]))
             resample_func = resample_block_nb if use_numba else resample_block
             resample_kwargs = dict(aggregator=aggregator)
         else:
