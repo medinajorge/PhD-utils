@@ -428,7 +428,7 @@ def plot_cs(cs):
         c = cs
     return HTML(cl.to_html(cl.to_hsl(c)))
 
-def plot_confidence_bands(*, fig=None, df=None, x=None, y=None, CI=None, label=None, color='#1f77b4', lw=6, opacity=0.3, line_specs={}, **fig_kwargs):
+def plot_confidence_bands(*, fig=None, df=None, x=None, y=None, CI=None, label=None, color='#1f77b4', lw=6, opacity=0.3, line_specs={}, yaxis='y', **fig_kwargs):
     """
     Plots a curve with confidence intervals as bands.
 
@@ -462,6 +462,7 @@ def plot_confidence_bands(*, fig=None, df=None, x=None, y=None, CI=None, label=N
         fillcolor=color,
         line=dict(color=color, width=0),
         opacity=opacity,
+        yaxis=yaxis,
         showlegend=False,
     ))
     if not input_fig:
