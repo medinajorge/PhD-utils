@@ -452,7 +452,11 @@ def plot_confidence_bands(*, fig=None, df=None, x=None, y=None, CI=None, label=N
         CI = np.vstack(df.CI.values)
 
     # Plot the main line (mean curve)
-    fig.add_trace(go.Scatter(x=x, y=y, line=dict(width=lw, color=color, **line_specs), name=label, showlegend=label is not None))
+    fig.add_trace(go.Scatter(x=x, y=y,
+                             line=dict(width=lw, color=color, **line_specs),
+                             name=label,
+                             showlegend=label is not None,
+                             yaxis=yaxis))
 
     # Plot the confidence interval as a band
     fig.add_trace(go.Scatter(
