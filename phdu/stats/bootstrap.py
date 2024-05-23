@@ -329,14 +329,17 @@ def _resample(data, data2, use_numba, statistic, R, n_min=1, smooth=False, aggre
             idxs_common_blocks = [i for i, (x, y) in enumerate(zip(data, data2)) if len(x) > 0 and len(y) > 0]
             if len(idxs_common_blocks) < len(data):
                 warnings.warn("Removing some blocks because they were empty.", RuntimeWarning)
-
-            data = tuple([data[i] for i in idxs_common_blocks])
-            data2 = tuple([data2[i] for i in idxs_common_blocks])
-            sample_stat = statistic(np.array([aggregator(di) for di in data]), np.array([aggregator(di) for di in data2]))
-            N = min(min([len(d) for d in data]),
-                    min([len(d) for d in data2]))
-            resample_func = resample_block_nb if use_numba else resample_block
-            resample_kwargs = dict(aggregator=aggregator)
+            if idxs_common_blocks:
+                data = tuple([data[i] for i in idxs_common_blocks])
+                data2 = tuple([data2[i] for i in idxs_common_blocks])
+                sample_stat = statistic(np.array([aggregator(di) for di in data]), np.array([aggregator(di) for di in data2]))
+                N = min(min([len(d) for d in data]),
+                        min([len(d) for d in data2]))
+                resample_func = resample_block_nb if use_numba else resample_block
+                resample_kwargs = dict(aggregator=aggregator)
+            else:
+                N = 0
+                sample_stat = np.NaN
         else:
             if data.ndim == 1:
                 data = data[:, None]
