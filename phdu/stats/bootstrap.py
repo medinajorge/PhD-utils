@@ -299,7 +299,7 @@ def _percentile_of_score(a, score, axis, account_equal=False):
     else:
         return (a < score).sum(axis=axis) / B
 
-def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, aggregator=_nb_mean, **kwargs):
+def _resample(data, data2, use_numba, statistic, R, n_min=1, smooth=False, aggregator=_nb_mean, **kwargs):
     """
     Resample using normal resampling if data2 is None.
     Else uses block resampling with data and data2.
@@ -361,7 +361,7 @@ def _resample(data, data2, use_numba, statistic, R, n_min=5, smooth=False, aggre
             #     data2 = np.hstack(data2)
     return data, data2, theta_hat_b, sample_stat, N
 
-def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba=True, n_min=5, aggregator=_nb_mean, **kwargs):
+def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba=True, n_min=1, aggregator=_nb_mean, **kwargs):
     """
     If data2 is provided, assumes a block resampling and statistic takes two arguments.
     Optional kwargs for aggregating data, data2 before computing the statistic:
@@ -594,7 +594,7 @@ def _compute_CI_percentile(boot_sample, alpha, alternative):
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
     return CI
 
-def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=3, use_numba=True, **kwargs):
+def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=1, use_numba=True, **kwargs):
     """
     If data2 is provided, statistic takes two arguments and assumes block resampling if the input data are tuples.
     Optional kwargs for aggregating data, data2 before computing the statistic:
