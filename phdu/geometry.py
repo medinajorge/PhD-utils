@@ -38,3 +38,32 @@ def is_inside_polygon_parallel(points, polygon):
     for i in prange(len(points)):
         results[i] = is_point_inside_polygon(points[i], polygon)
     return results
+
+@njit
+def centroid_irregular_polygon(vertices):
+    # Ensure vertices form a closed polygon by repeating the first vertex at the end
+    if (vertices[0] != vertices[-1]).all():
+        vertices = np.vstack((vertices, vertices[:1]))
+
+    # Initialize area and centroid coordinates
+    A = 0
+    C_x = 0
+    C_y = 0
+
+    # Number of vertices (excluding the repeated first vertex at the end)
+    N = len(vertices) - 1
+
+    for i in range(N):
+        x_i, y_i = vertices[i]
+        x_next, y_next = vertices[i + 1]
+
+        common_factor = (x_i * y_next - x_next * y_i)
+        A += common_factor
+        C_x += (x_i + x_next) * common_factor
+        C_y += (y_i + y_next) * common_factor
+
+    A = A / 2
+    C_x = C_x / (6 * A)
+    C_y = C_y / (6 * A)
+
+    return np.array([C_x, C_y])
