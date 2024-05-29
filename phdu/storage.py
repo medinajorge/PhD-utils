@@ -8,7 +8,6 @@ import psutil
 
 parent_dir =  'data'
 
-
 def current_process_memory_usage():
     """
     Returns the memory used by the current process in GB.
@@ -108,7 +107,6 @@ def delete_files_by_key(root, keys):
     # tree walk starting in directory 'data':
     if isinstance(keys, str):
         keys = [keys]
-    root = 'data'
     count = 0
     for dirpath, dirnames, filenames in os.walk(root):
         # delete files containing 'DBS' or 'control'
