@@ -45,9 +45,9 @@ def resample_paired_nb(X, Y, func, output_len=1, R=int(1e5), seed=0):
 
     boot_sample = np.empty((R, output_len))
     boot_sample[0] = stat # first element is the sample statistic.
-    for i, r in enumerate(data_resampled, start=1):
+    for i, r in enumerate(data_resampled):
         x, y = r.T
-        boot_sample[i] = func(x, y)
+        boot_sample[i+1] = func(x, y)
     return boot_sample
 
 @njit
@@ -78,10 +78,10 @@ def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
     """X: array of shape (N_samples, n_vars)."""
     data_resampled = resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
 
-    boot_sample = np.empty((R-1, output_len))
+    boot_sample = np.empty((R, output_len))
     boot_sample[0] = func(X) # first element is the sample statistic.
-    for i, r in enumerate(data_resampled, start=1):
-        boot_sample[i] = func(r)
+    for i, r in enumerate(data_resampled):
+        boot_sample[i+1] = func(r)
     return boot_sample
 
 @njit
@@ -90,10 +90,10 @@ def resample_twosamples_nb(X1, X2, func, output_len=1, R=int(1e5), seed=0, smoot
     data_resampled_1 = resample_nb_X(X1, R=R-1, seed=seed, smooth=smooth, N=N)
     data_resampled_2 = resample_nb_X(X2, R=R-1, seed=seed+1, smooth=smooth, N=N)
 
-    boot_sample = np.empty((R-1, output_len))
+    boot_sample = np.empty((R, output_len))
     boot_sample[0] = func(X1, X2) # first element is the sample statistic.
-    for i, (r1, r2) in enumerate(zip(data_resampled_1, data_resampled_2), start=1):
-        boot_sample[i] = func(r1, r2)
+    for i, (r1, r2) in enumerate(zip(data_resampled_1, data_resampled_2)):
+        boot_sample[i+1] = func(r1, r2)
     return boot_sample
 
 def resample_twosamples(X1, X2, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
