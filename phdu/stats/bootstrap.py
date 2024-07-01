@@ -36,14 +36,16 @@ from . import conf_interval
 @njit
 def resample_paired_nb(X, Y, func, output_len=1, R=int(1e5), seed=0):
     np.random.seed(seed)
+    r = R - 1
     N = X.size
     data_paired = np.vstack((X, Y)).T
-    idxs_resampling = np.random.randint(low=0, high=N, size=R*N)
-    data_resampled = data_paired[idxs_resampling].reshape(R, N, 2)
+    idxs_resampling = np.random.randint(low=0, high=N, size=r*N)
+    data_resampled = data_paired[idxs_resampling].reshape(r, N, 2)
     stat = func(X, Y)
 
     boot_sample = np.empty((R, output_len))
-    for i, r in enumerate(data_resampled):
+    boot_sample[0] = stat # first element is the sample statistic.
+    for i, r in enumerate(data_resampled, start=1):
         x, y = r.T
         boot_sample[i] = func(x, y)
     return boot_sample
@@ -74,31 +76,34 @@ def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=0):
 @njit
 def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
     """X: array of shape (N_samples, n_vars)."""
-    data_resampled = resample_nb_X(X, R=R, seed=seed, smooth=smooth, N=N)
+    data_resampled = resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
 
-    boot_sample = np.empty((R, output_len))
-    for i, r in enumerate(data_resampled):
+    boot_sample = np.empty((R-1, output_len))
+    boot_sample[0] = func(X) # first element is the sample statistic.
+    for i, r in enumerate(data_resampled, start=1):
         boot_sample[i] = func(r)
     return boot_sample
 
 @njit
 def resample_twosamples_nb(X1, X2, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
     """Xi: array of shape (N_samples, n_vars)."""
-    data_resampled_1 = resample_nb_X(X1, R=R, seed=seed, smooth=smooth, N=N)
-    data_resampled_2 = resample_nb_X(X2, R=R, seed=seed+1, smooth=smooth, N=N)
+    data_resampled_1 = resample_nb_X(X1, R=R-1, seed=seed, smooth=smooth, N=N)
+    data_resampled_2 = resample_nb_X(X2, R=R-1, seed=seed+1, smooth=smooth, N=N)
 
-    boot_sample = np.empty((R, output_len))
-    for i, (r1, r2) in enumerate(zip(data_resampled_1, data_resampled_2)):
+    boot_sample = np.empty((R-1, output_len))
+    boot_sample[0] = func(X1, X2) # first element is the sample statistic.
+    for i, (r1, r2) in enumerate(zip(data_resampled_1, data_resampled_2), start=1):
         boot_sample[i] = func(r1, r2)
     return boot_sample
 
 def resample_twosamples(X1, X2, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
     """Xi: array of shape (N_samples, n_vars)."""
-    data_resampled_1 = resample_nb_X(X1, R=R, seed=seed, smooth=smooth, N=N)
-    data_resampled_2 = resample_nb_X(X2, R=R, seed=seed, smooth=smooth, N=N)
+    data_resampled_1 = resample_nb_X(X1, R=R-1, seed=seed, smooth=smooth, N=N)
+    data_resampled_2 = resample_nb_X(X2, R=R-1, seed=seed, smooth=smooth, N=N)
 
     boot_sample = np.empty((R, output_len))
-    for i, (r1, r2) in enumerate(zip(data_resampled_1, data_resampled_2)):
+    boot_sample[0] = func(X1, X2) # first element is the sample statistic.
+    for i, (r1, r2) in enumerate(zip(data_resampled_1, data_resampled_2), start=1):
         boot_sample[i] = func(r1, r2)
     return boot_sample
 
@@ -191,10 +196,11 @@ def resample_block_nb(X, Y, func, output_len=1, R=int(1e4), R_B=int(1e3), seed=0
 
 def resample(X, func, output_len=1, R=int(1e4), seed=0, smooth=False, N=0):
     """X: array of shape (N_samples, n_vars)."""
-    data_resampled = resample_nb_X(X, R=R, seed=seed, smooth=smooth, N=N)
+    data_resampled = resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
 
     boot_sample = np.empty((R, output_len))
-    for i, r in enumerate(data_resampled):
+    boot_sample[0] = func(X) # first element is the sample statistic.
+    for i, r in enumerate(data_resampled, start=1):
         boot_sample[i] = func(r)
     return boot_sample
 
@@ -396,7 +402,7 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
             sample_stat = statistic(data, data2)
         return np.array([sample_stat, sample_stat])
     else:
-        return _compute_CI_percentile(theta_hat_b, alpha_bca, alternative)
+        return _compute_CI_percentile(theta_hat_b, alpha_bca, alternative, to_ptg=True)
     #elif alternative == 'two-sided':
     #    return  np.percentile(theta_hat_b, alpha_bca*100, axis=0)
     #elif alternative == 'less':
@@ -572,11 +578,11 @@ def CI_studentized(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sid
         CI = compute_CI_studentized(base, results, studentized_results, alpha=alpha, alternative=alternative)
     return CI
 
-def _compute_CI_percentile(boot_sample, alpha, alternative):
+def _compute_CI_percentile(boot_sample, alpha, alternative, to_ptg=False):
     alpha_iter = isinstance(alpha, Iterable)
     if alpha_iter:
         alpha = np.asarray(alpha)
-        if alpha.sum() < 1.1:
+        if alpha.sum() < 1.1 or to_ptg:
             alpha_ptg = alpha * 100
         else:
             alpha_ptg = alpha
