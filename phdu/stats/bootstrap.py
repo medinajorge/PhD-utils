@@ -582,7 +582,7 @@ def _compute_CI_percentile(boot_sample, alpha, alternative, to_ptg=False):
     alpha_iter = isinstance(alpha, Iterable)
     if alpha_iter:
         alpha = np.asarray(alpha)
-        if alpha.sum() < 1.1 or to_ptg:
+        if alpha.sum() < 1.1 or to_ptg: # TODO: modify the condition to allow percentages < 1.
             alpha_ptg = alpha * 100
         else:
             alpha_ptg = alpha

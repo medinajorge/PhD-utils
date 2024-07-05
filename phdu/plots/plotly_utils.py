@@ -119,7 +119,7 @@ def subplots_base_layout(cols, rows=1, make_subplots_kwargs={}, **layout_kwargs)
     return base
 
 def get_subplots(cols, rows=1, horizontal_spacing=0.03, vertical_spacing=0.03, height=None, width=2500, ticksize=32, font_size=40, font_family="sans-serif",
-                 hovermode=False, delete_axes=False, simple_axes=False, shared_xaxes=True, shared_yaxes=True, layout_kwargs={},
+                 hovermode=False, delete_axes=False, simple_axes=True, shared_xaxes=True, shared_yaxes=True, layout_kwargs={},
                  **make_subplots_kwargs):
     height = 800*rows if height is None else height
     fig = make_subplots(figure=go.Figure(layout=dict(margin=dict(l=100, r=20, b=80, t=60, pad=1), height=height, width=width)),
