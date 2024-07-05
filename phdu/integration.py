@@ -5,7 +5,7 @@ import numpy as np
 from numba import njit
 from numba.core.registry import CPUDispatcher
 
-def trapezoid_rule(func, a, b, n):
+def trapezoid_rule(func, a, b, n, *args):
     """
     Applies the trapezoid rule with n intervals.
 
@@ -14,17 +14,18 @@ def trapezoid_rule(func, a, b, n):
     a (float): The lower limit of integration.
     b (float): The upper limit of integration.
     n (int): The number of intervals.
+    args: Additional arguments for the function.
 
     Returns:
     float: The approximated value of the integral.
     """
     h = (b - a) / n
     x = np.linspace(a, b, n + 1)
-    y = func(x)
+    y = func(x, *args)
     integral = (h / 2) * (y[0] + 2 * np.sum(y[1:n]) + y[n])
     return integral
 
-def simpsons_3oct_rule(func, a, b, n):
+def simpson_3oct_rule(func, a, b, n, *args):
     """
     Applies Simpson's 3/8 rule with n intervals.
 
@@ -33,6 +34,7 @@ def simpsons_3oct_rule(func, a, b, n):
     a (float): The lower limit of integration.
     b (float): The upper limit of integration.
     n (int): The number of intervals (must be a multiple of 3).
+    args: Additional arguments for the function.
 
     Returns:
     float: The approximated value of the integral.
@@ -42,7 +44,7 @@ def simpsons_3oct_rule(func, a, b, n):
 
     h = (b - a) / n
     x = np.linspace(a, b, n + 1)
-    y = func(x)
+    y = func(x, *args)
 
     integral = 0
     for i in range(0, n, 3):
@@ -50,26 +52,26 @@ def simpsons_3oct_rule(func, a, b, n):
 
     return integral
 
-def eval_definite_integral(method, func, a, b, target_error, n0):
+def eval_definite_integral(method, func, a, b, target_error, n0, *args):
     n = n0
     # Initial evaluation
-    integral_prev = method(func, a, b, n)
+    integral_prev = method(func, a, b, n, *args)
     n *= 2
-    integral_current = method(func, a, b, n)
+    integral_current = method(func, a, b, n, *args)
     # Loop until the relative error is less than the target error
     while abs((integral_current - integral_prev) / integral_current) > target_error:
         n *= 2
         integral_prev = integral_current
-        integral_current = method(func, a, b, n)
+        integral_current = method(func, a, b, n, *args)
 
     return integral_current, n
 
 
 trapezoid_rule_nb = njit(trapezoid_rule)
-simpson_3oct_rule_nb = njit(simpsons_3oct_rule)
+simpson_3oct_rule_nb = njit(simpson_3oct_rule)
 eval_definite_integral_nb = njit(eval_definite_integral)
 
-def definite_integral(func, a, b, target_error=1e-4, n0=24, return_n=False, method='simpson_3oct'):
+def definite_integral(func, a, b, *args, target_error=1e-4, n0=24, return_n=False, method='simpson_3oct'):
     """
     Returns the definite integral of a function. Uses Numba acceleration if possible.
 
@@ -81,6 +83,7 @@ def definite_integral(func, a, b, target_error=1e-4, n0=24, return_n=False, meth
     target_error (float): The target relative error.
     n0 (int): The initial number of intervals.
     return_n (bool): Whether to return the number of intervals.
+    *args: Additional arguments for the function.
 
     Returns:
     float: The approximated value of the integral.
@@ -100,7 +103,7 @@ def definite_integral(func, a, b, target_error=1e-4, n0=24, return_n=False, meth
     computer = globals()[f'{method}_rule{nb_str}']
     evaluator = globals()[f'eval_definite_integral{nb_str}']
 
-    integral, n = evaluator(computer, func, a, b, target_error, n0)
+    integral, n = evaluator(computer, func, a, b, target_error, n0, *args)
     if return_n:
         return integral, n
     else:
