@@ -35,4 +35,4 @@ def corr_pruned(df, method='spearman', alpha=0.05, ns_to_nan=True):
     p = pd.Series(p).unstack()
     if ns_to_nan:
         c[p > alpha] = np.NaN
-    return c
+    return c, p
