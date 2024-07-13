@@ -30,7 +30,9 @@ def corr_pruned(df, method='spearman', alpha=0.05, ns_to_nan=True):
             else:
                 corr, pval = corr_func(*(df[[col1, col2]].dropna().values.T))
                 c[(col1, col2)] = corr
+                c[(col2, col1)] = corr
                 p[(col1, col2)] = pval
+                p[(col2, col1)] = pval
     c = pd.Series(c).unstack()
     p = pd.Series(p).unstack()
     if ns_to_nan:
