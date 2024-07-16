@@ -80,9 +80,9 @@ def tuple_wise(*dfs, check_index=True, check_columns=True):
     dfs, is_series = _ensure_df(dfs)
     df = dfs[0]
     if check_index:
-        assert all(df.index.intersection(df2.index).size == df.shape[0] for df2 in dfs[1:])
+        assert all(df.index.intersection(df2.index).size == df.shape[0] for df2 in dfs[1:]), "Indices do not match. To ignore this, set check_index=False."
     if check_columns:
-        assert all(df.columns.intersection(df2.columns).size == df.shape[1] for df2 in dfs[1:])
+        assert all(df.columns.intersection(df2.columns).size == df.shape[1] for df2 in dfs[1:]), "Columns do not match. To ignore this, set check_columns=False."
     out = pd.DataFrame(np.rec.fromarrays(tuple(df.values for df in dfs)).tolist(),
                        columns=df.columns,
                        index=df.index)
