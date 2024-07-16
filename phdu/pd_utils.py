@@ -66,22 +66,29 @@ def expand_sequences(df, dt=1, maxlen=None):
                         columns = pd.MultiIndex.from_product([df.columns, dt*np.arange(maxlen)]))
 
 def _ensure_df(dfs):
+    is_series = all(isinstance(df, pd.Series) for df in dfs)
     dfs = [df.to_frame() if isinstance(df, pd.Series) else df for df in dfs]
-    return dfs
+    return dfs, is_series
 
-def tuple_wise(*dfs):
+def tuple_wise(*dfs, check_index=True, check_columns=True):
     """
     Attributes: Dataframes with same indices and columns. If the input are Series, they are converted to DataFrames.
 
     Returns dataframe where each element is a tuple containing the elements from other dataframes.
+    If the input were Series, the output is a Series.
     """
-    dfs = _ensure_df(dfs)
+    dfs, is_series = _ensure_df(dfs)
     df = dfs[0]
-    assert all(df.index.intersection(df2.index).size == df.shape[0] for df2 in dfs[1:])
-    assert all(df.columns.intersection(df2.columns).size == df.shape[1] for df2 in dfs[1:])
-    return pd.DataFrame(np.rec.fromarrays(tuple(df.values for df in dfs)).tolist(),
-                        columns=df.columns,
-                        index=df.index)
+    if check_index:
+        assert all(df.index.intersection(df2.index).size == df.shape[0] for df2 in dfs[1:])
+    if check_columns:
+        assert all(df.columns.intersection(df2.columns).size == df.shape[1] for df2 in dfs[1:])
+    out = pd.DataFrame(np.rec.fromarrays(tuple(df.values for df in dfs)).tolist(),
+                       columns=df.columns,
+                       index=df.index)
+    if is_series:
+        out = out.squeeze()
+    return out
 
 def vstack_wise(*dfs):
     """
@@ -89,10 +96,12 @@ def vstack_wise(*dfs):
 
     Returns: DataFrame where df_ij = np.vstack((df1_ij, df2_ij, ...))
     """
-    dfs = _ensure_df(dfs)
+    dfs, is_series = _ensure_df(dfs)
     R = np.rec.fromarrays(tuple(df.values for df in dfs))
     df1_df2 = pd.Series([np.vstack(i) if all(isinstance(j, np.ndarray) for j in i) else np.NaN for i in R.flatten()], dtype=object,
                         index=dfs[0].stack(dropna=False).index).unstack()
+    if is_series:
+        df1_df2 = df1_df2.squeeze()
     return df1_df2
 
 def column_diffs(df, mode="to", mod_col=lambda x: "".join(np.array([*x])[[0, -1]])):
