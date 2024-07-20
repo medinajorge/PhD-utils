@@ -587,7 +587,7 @@ def _compute_CI_percentile(boot_sample, alpha, alternative, to_ptg=False):
         else:
             alpha_ptg = alpha
     else:
-        alpha_ptg = alpha*100 if alpha < 1 else alpha
+        alpha_ptg = alpha*100 if (alpha < 1 or to_ptg) else alpha
     if boot_sample.ndim == 1:
         output_len = 1
     else:

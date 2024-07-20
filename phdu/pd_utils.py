@@ -28,6 +28,43 @@ def latex_table(df, index=False, **kwargs):
     print(formatter(df.to_latex(index=index, column_format=col_format, **kwargs)))
     return
 
+def format_CI_results(df, exponential=False, simplify=True, integer=False):
+    """
+    Formats the confidence interval results in a DataFrame.
+
+    Parameters:
+    df (pandas.DataFrame): DataFrame containing columns: ['sample_stat', 'CI']
+    exponential (bool, optional): If True, formats the numbers in exponential notation. Defaults to False.
+    simplify (bool, optional): If True and exponential is True, simplifies the exponential notation if possible. Defaults to True.
+    integer (bool, optional): If True, formats the numbers as integers. Defaults to False.
+
+    Returns:
+    pandas.Series: A series with the formatted confidence intervals: 'sample_stat [CI_low, CI_high]'.
+    """
+    def process_row(row):
+        if exponential:
+            if simplify:
+                num_without_exp = lambda f: f'{f:.2e}'.split('e')[0]
+                exp_low_str = f'{row.CI[0]:.2e}'.split('e')[1]
+                exp_high_str = f'{row.CI[1]:.2e}'.split('e')[1]
+                exp_low = int(exp_low_str)
+                exp_high = int(exp_high_str)
+                diff = exp_high - exp_low
+                if not diff:
+                    return f'{num_without_exp(row.sample_stat)} [{num_without_exp(row.CI[0])}, {num_without_exp(row.CI[1])}] e{exp_low_str}'
+                else:
+                    # everything in terms of exp_low
+                    sample_stat = row.sample_stat / 10**exp_low
+                    CI = row.CI / 10**exp_low
+                    return f'{sample_stat:.1f} [{CI[0]:.1f}, {CI[1]:.1f}] e{exp_low_str}'
+            else:
+                return f'{row.sample_stat:.2e} [{row.CI[0]:.2e}, {row.CI[1]:.2e}]'
+        elif integer:
+            return f'{int(row.sample_stat)} [{int(row.CI[0])}, {int(row.CI[1])}]'
+        else:
+            return f'{row.sample_stat:.2f} [{row.CI[0]:.2f}, {row.CI[1]:.2f}]'
+    return df.apply(process_row, axis=1)
+
 def insert_level_sep(df, row_seps=1, col_seps=1):
     """
     Insert NaN rows and cols when the outer level of the MultiIndex changes.
