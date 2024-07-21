@@ -3,6 +3,7 @@ pandas utils
 """
 import pandas as pd
 import numpy as np
+import re
 from functools import reduce
 from .stats.rtopy import resample
 from .stats.test import permutation
@@ -27,6 +28,75 @@ def latex_table(df, index=False, **kwargs):
     formatter = lambda x: text_formatter(table_formatter(x))
     print(formatter(df.to_latex(index=index, column_format=col_format, **kwargs)))
     return
+
+def parse_stat_ci(cell):
+    """
+    Parses a cell to extract sample_stat, CI_low, and CI_up,
+    and applies exponent if present.
+    """
+    match = re.match(r"([\d\.]+) \[([\d\.]+), ([\d\.]+)\]( e([+-]\d+))?", cell)
+    if match:
+        stat = float(match.group(1))
+        ci_low = float(match.group(2))
+        ci_up = float(match.group(3))
+        if match.group(5):  # Exponent part is present
+            exponent = int(match.group(5))
+            factor = 10 ** exponent
+            stat *= factor
+            ci_low *= factor
+            ci_up *= factor
+        return stat, ci_low, ci_up
+    else:
+        raise ValueError("Cell format is incorrect")
+
+def highlight_best(df, criteria):
+    """
+    Highlights the best values for each column according to the given criteria.
+
+    if the best value is unique (no CI overlap), it is highlighted in bold. Else, all best values are underlined.
+
+    Parameters:
+    df (pd.DataFrame): The input DataFrame with cells in 'sample_stat [CI_low, CI_up]' format.
+    criteria_dict (dict|str): Dictionary where key is column name and value is 'lower' or 'upper' criteria. If str, the same criteria is applied to all columns.
+
+    Returns:
+    pd.DataFrame: DataFrame with highlighted cells.
+    """
+    df_copy = df.copy()
+
+    if isinstance(criteria, str):
+        criteria_dict = {column: criteria for column in df.columns}
+    else:
+        criteria_dict = criteria
+
+    for k, (column, criteria) in enumerate(criteria_dict.items()):
+        # Parse each cell in the column
+        parsed_values = df[column].apply(parse_stat_ci)
+
+        # Determine the best value according to the criteria
+        if criteria == 'lower':
+            best_value = min(parsed_values, key=lambda x: x[0])
+        elif criteria == 'upper':
+            best_value = max(parsed_values, key=lambda x: x[0])
+        else:
+            raise ValueError("Criteria must be 'lower' or 'upper'")
+
+        best_stat, best_ci_low, best_ci_up = best_value
+
+        # Check for CI overlap
+        for i, (stat, ci_low, ci_up) in enumerate(parsed_values):
+            if stat == best_stat:
+                overlap = False
+                for j, (other_stat, other_ci_low, other_ci_up) in enumerate(parsed_values):
+                    if i != j and not (best_ci_up < other_ci_low or best_ci_low > other_ci_up):
+                        overlap = True
+                        break
+                if overlap:
+                    df_copy.iloc[i,k] = f"\\underline{{{df.iloc[i,k]}}}"
+                else:
+                    df_copy.iloc[i,k] = f"\\textbf{{{df.iloc[i,k]}}}"
+
+    return df_copy
 
 def format_CI_results(df, exponential=False, simplify=True, integer=False):
     """
