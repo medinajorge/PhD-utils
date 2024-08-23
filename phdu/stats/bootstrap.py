@@ -440,7 +440,7 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
                                   np.array([aggregator(di) for di in data2]))
         else:
             theta_hat = statistic(data, data2)
-    percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1, account_equal=account_equal)
+    percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=0, account_equal=account_equal)
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
@@ -459,10 +459,12 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
 
     # calculate alpha_1, alpha_2
     def compute_alpha(p):
+        z0_hat_expanded = z0_hat[:, None]
         z_alpha = ndtri(p)
-        num = z0_hat + z_alpha
-        return ndtr(z0_hat + num/(1 - a_hat*num))
+        num = z0_hat_expanded + z_alpha[None]
+        return ndtr(z0_hat_expanded + num/(1 - a_hat[:, None]*num))
     alpha_bca = compute_alpha(probs[(probs != 0) & (probs != 1)])
+    alpha_bca = np.atleast_1d(alpha_bca.squeeze())
     if (alpha_bca > 1).any() or (alpha_bca < 0).any():
         warnings.warn('percentiles must be in [0, 1]. bca percentiles: {}\nForcing percentiles in [0,1]...'.format(alpha_bca), RuntimeWarning)
         alpha_bca = np.clip(alpha_bca, 0, 1)
@@ -598,6 +600,8 @@ def CI_studentized(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sid
     return CI
 
 def _compute_CI_percentile(boot_sample, alpha, alternative, to_ptg=False):
+    if alpha.ndim == 2: # variable alpha for each output. Used for CI_bca
+        return np.vstack(_compute_CI_percentile(boot_sample[:,i], alpha[i], alternative, to_ptg) for i in range(alpha.shape[0]))
     alpha_iter = isinstance(alpha, Iterable)
     if alpha_iter:
         alpha = np.asarray(alpha)
