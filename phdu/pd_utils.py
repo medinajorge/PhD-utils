@@ -84,17 +84,18 @@ def highlight_best(df, criteria):
         best_stat, best_ci_low, best_ci_up = best_value
 
         # Check for CI overlap
+        overlap = False
         for i, (stat, ci_low, ci_up) in enumerate(parsed_values):
             if stat == best_stat:
-                overlap = False
                 for j, (other_stat, other_ci_low, other_ci_up) in enumerate(parsed_values):
                     if i != j and not (best_ci_up < other_ci_low or best_ci_low > other_ci_up):
                         overlap = True
-                        break
+                        df_copy.iloc[j,k] = f"\\underline{{{df.iloc[j,k]}}}"
                 if overlap:
                     df_copy.iloc[i,k] = f"\\underline{{{df.iloc[i,k]}}}"
                 else:
                     df_copy.iloc[i,k] = f"\\textbf{{{df.iloc[i,k]}}}"
+                break
 
     return df_copy
 
