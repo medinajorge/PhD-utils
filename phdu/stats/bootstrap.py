@@ -52,7 +52,7 @@ def resample_paired_nb(X, Y, func, output_len=1, R=int(1e5), seed=0):
 
 @njit
 def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=0):
-    """X: array of shape (N_samples, n_vars)."""
+    """X: array of shape (N, n_vars)."""
     np.random.seed(seed)
     n, num_vars = X.shape
     if N == 0:
@@ -74,9 +74,23 @@ def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=0):
     return data_resampled
 
 @njit
+def resample_nb_X_multidim(X, R=int(1e5), seed=0, N=0):
+    """X: array of shape (N, *dims)."""
+    np.random.seed(seed)
+    n = X.shape[0]
+    if N == 0:
+        N = n
+    idxs_resampling = np.random.randint(low=0, high=n, size=R*N)
+    data_resampled = X[idxs_resampling].reshape(R, N, *X.shape[1:])
+    return data_resampled
+
+@njit
 def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
-    """X: array of shape (N_samples, n_vars)."""
-    data_resampled = resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
+    """X: array of shape (N, n_vars)."""
+    if X.ndim > 2:
+        data_resampled = resample_nb_X_multidim(X, R=R-1, seed=seed, N=N)
+    else:
+        data_resampled = resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
 
     boot_sample = np.empty((R, output_len))
     boot_sample[0] = func(X) # first element is the sample statistic.
@@ -86,7 +100,7 @@ def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
 
 @njit
 def resample_twosamples_nb(X1, X2, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
-    """Xi: array of shape (N_samples, n_vars)."""
+    """Xi: array of shape (N, n_vars)."""
     data_resampled_1 = resample_nb_X(X1, R=R-1, seed=seed, smooth=smooth, N=N)
     data_resampled_2 = resample_nb_X(X2, R=R-1, seed=seed+1, smooth=smooth, N=N)
 
@@ -97,7 +111,7 @@ def resample_twosamples_nb(X1, X2, func, output_len=1, R=int(1e5), seed=0, smoot
     return boot_sample
 
 def resample_twosamples(X1, X2, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
-    """Xi: array of shape (N_samples, n_vars)."""
+    """Xi: array of shape (N, n_vars)."""
     data_resampled_1 = resample_nb_X(X1, R=R-1, seed=seed, smooth=smooth, N=N)
     data_resampled_2 = resample_nb_X(X2, R=R-1, seed=seed, smooth=smooth, N=N)
 
@@ -195,8 +209,11 @@ def resample_block_nb(X, Y, func, output_len=1, R=int(1e4), R_B=int(1e3), seed=0
 #     return boot_sample
 
 def resample(X, func, output_len=1, R=int(1e4), seed=0, smooth=False, N=0):
-    """X: array of shape (N_samples, n_vars)."""
-    data_resampled = resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
+    """X: array of shape (N, *dims)."""
+    if X.ndim > 2:
+        data_resampled = resample_nb_X_multidim(X, R=R-1, seed=seed, N=N)
+    else:
+        data_resampled = resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
 
     boot_sample = np.empty((R, output_len))
     boot_sample[0] = func(X) # first element is the sample statistic.
