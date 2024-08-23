@@ -462,10 +462,11 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
 
     # calculate alpha_1, alpha_2
     def compute_alpha(p):
-        z0_hat_expanded = z0_hat[:, None]
+        z0_hat_expanded = np.atleast_1d(z0_hat)[:, None] # compatibility with multiple outputs
+        a_hat_expanded = np.atleast_1d(a_hat)[: , None]
         z_alpha = ndtri(p)
         num = z0_hat_expanded + z_alpha[None]
-        return ndtr(z0_hat_expanded + num/(1 - a_hat[:, None]*num))
+        return ndtr(z0_hat_expanded + num/(1 - a_hat_expanded*num))
     alpha_bca = compute_alpha(probs[(probs != 0) & (probs != 1)])
     alpha_bca = np.atleast_1d(alpha_bca.squeeze())
     if (alpha_bca > 1).any() or (alpha_bca < 0).any():
