@@ -88,6 +88,7 @@ def resample_nb_X_multidim(X, R=int(1e5), seed=0, N=0):
 def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
     """X: array of shape (N, n_vars)."""
     if X.ndim > 2:
+        assert not smooth, "Smooth not supported for multidimensional data."
         data_resampled = resample_nb_X_multidim(X, R=R-1, seed=seed, N=N)
     else:
         data_resampled = resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
@@ -211,6 +212,7 @@ def resample_block_nb(X, Y, func, output_len=1, R=int(1e4), R_B=int(1e3), seed=0
 def resample(X, func, output_len=1, R=int(1e4), seed=0, smooth=False, N=0):
     """X: array of shape (N, *dims)."""
     if X.ndim > 2:
+        assert not smooth, "Multidimensional resampling does not support smoothing."
         data_resampled = resample_nb_X_multidim(X, R=R-1, seed=seed, N=N)
     else:
         data_resampled = resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
@@ -285,6 +287,11 @@ def jackknife_stat_nb(data, statistic):
     stats = np.array([statistic(r) for r in resamples])
     return stats
 
+def jackknife_stat(data, statistic):
+    resamples = jackknife_resampling(data)
+    stats = np.array([statistic(r) for r in resamples])
+    return stats
+
 def jackknife_stat_two_samples(data, data2, statistic, aggregator=None):
     if isinstance(data, np.ndarray): # not block
         jk_X = jackknife_resampling(data)
@@ -303,11 +310,6 @@ def jackknife_stat_two_samples(data, data2, statistic, aggregator=None):
             stats = np.array([statistic(_preprocess(x), _preprocess(y)) for x, y in jk_XY])
     else:
         raise ValueError("data must be a tuple or np.ndarray.")
-    return stats
-
-def jackknife_stat_(data, statistic):
-    resamples = jackknife_resampling(data)
-    stats = np.array([statistic(r) for r in resamples])
     return stats
 
 def _percentile_of_score(a, score, axis, account_equal=False):
