@@ -7,6 +7,7 @@ Numba version of bias-corrected and accelerated (BCa) bootstrap.
 import numpy as np
 import pandas as pd
 from numba import njit, boolean
+from numba.core.registry import CPUDispatcher
 from itertools import product
 from collections import defaultdict
 from collections.abc import Iterable
@@ -389,7 +390,7 @@ def _resample(data, data2, use_numba, statistic, R, n_min=1, smooth=False, aggre
             #     data2 = np.hstack(data2)
     return data, data2, theta_hat_b, sample_stat, N
 
-def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba=True, n_min=1, aggregator=_nb_mean, **kwargs):
+def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba='auto', n_min=1, aggregator=_nb_mean, **kwargs):
     """
     If data2 is provided, assumes a block resampling and statistic takes two arguments.
     Optional kwargs for aggregating data, data2 before computing the statistic:
@@ -397,6 +398,8 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
                          def nb_mean(x):
                              return np.mean(x)
     """
+    if use_numba == 'auto':
+        use_numba = isinstance(statistic, CPUDispatcher)
     if alternative == 'two-sided':
         probs = np.array([alpha/2, 1 - alpha/2])
     elif alternative == 'less':
@@ -626,7 +629,7 @@ def _compute_CI_percentile(boot_sample, alpha, alternative, to_ptg=False):
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
     return CI
 
-def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=1, use_numba=True, **kwargs):
+def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=1, use_numba='auto', **kwargs):
     """
     If data2 is provided, statistic takes two arguments and assumes block resampling if the input data are tuples.
     Optional kwargs for aggregating data, data2 before computing the statistic:
@@ -634,6 +637,8 @@ def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=Fa
                          def nb_mean(x):
                              return np.mean(x)
     """
+    if use_numba == 'auto':
+        use_numba = isinstance(statistic, CPUDispatcher)
     data, data2, boot_sample, sample_stat, N = _resample(data, data2, use_numba, statistic, R=R, n_min=n_min, smooth=smooth, **kwargs)
     if boot_sample is None:
         return np.array([np.NaN, np.NaN])
