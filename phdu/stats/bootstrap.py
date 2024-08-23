@@ -603,7 +603,7 @@ def CI_studentized(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sid
     return CI
 
 def _compute_CI_percentile(boot_sample, alpha, alternative, to_ptg=False):
-    if alpha.ndim == 2: # variable alpha for each output. Used for CI_bca
+    if isinstance(alpha, np.ndarray) and alpha.ndim == 2: # variable alpha for each output. Used for CI_bca
         return np.vstack(_compute_CI_percentile(boot_sample[:,i], alpha[i], alternative, to_ptg) for i in range(alpha.shape[0]))
     alpha_iter = isinstance(alpha, Iterable)
     if alpha_iter:
