@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='phdu',
-    version='2.6.6',
+    version='2.6.7',
     author="Jorge Medina Hernández",
     author_email='medinahdezjorge@gmail.com',
     packages=find_packages("."),
@@ -14,7 +14,7 @@ setup(
     keywords=['science', 'statistics', 'tidy', 'project organization', 'project', 'organization', 'path', 'storage'],
     classifiers = [
         "Programming Language :: Python :: 3",
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: GNU Affero General Public License v3",
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering",
