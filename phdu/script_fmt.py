@@ -120,8 +120,9 @@ def parse_optuna_output(file_path, direction='minimize'):
                 trial_number = int(trial_number.group(1))
                 output_value = float(output_value.group(1))
                 hyperparameters = eval(hyperparameters.group(1))
+                hyperparameters = {f'params_{key}': fmt.decoder(value) for key, value in hyperparameters.items()}
 
-                row = {'trial': trial_number, 'value': output_value}
+                row = {'number': trial_number, 'value': output_value}
                 row.update(hyperparameters)
                 data.append(row)
 
