@@ -6,6 +6,7 @@ Handle scripts.
 - parse_optuna_output: Parses the output file of an Optuna optimization process and returns a sorted DataFrame.
 """
 import os
+import re
 from tidypath import fmt
 
 def getopt_printer(opts):
