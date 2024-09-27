@@ -30,11 +30,11 @@ def corr_pruned(df, col=None, method='spearman', alpha=0.05, ns_to_nan=True):
     p = {}
     coltypes = df.dtypes
     numerical_columns = coltypes != 'object'
+    categorical_columns = coltypes == 'category'
     if method == 'spearman':
-        categorical_columns = coltypes == 'category'
         valid_columns = numerical_columns | categorical_columns
     else:
-        valid_columns = numerical_columns
+        valid_columns = numerical_columns & (~categorical_columns)
     valid_columns = valid_columns[valid_columns].index
     if col is not None:
         col_iterator_1 = [col]
