@@ -28,12 +28,20 @@ def corr_pruned(df, col=None, method='spearman', alpha=0.05, ns_to_nan=True):
     corr_func = getattr(ss, f"{method}r")
     c = {}
     p = {}
+    coltypes = df.dtypes
+    numerical_columns = coltypes != 'object'
+    if method == 'spearman':
+        categorical_columns = coltypes == 'category'
+        valid_columns = numerical_columns | categorical_columns
+    else:
+        valid_columns = numerical_columns
+    valid_columns = valid_columns[valid_columns].index
     if col is not None:
         col_iterator_1 = [col]
-        col_iterator_2 = tqdm(df.columns)
+        col_iterator_2 = tqdm(valid_columns)
     else:
-        col_iterator_1 = tqdm(df.columns)
-        col_iterator_2 = df.columns
+        col_iterator_1 = tqdm(valid_columns)
+        col_iterator_2 = valid_columns
 
     for col1 in col_iterator_1:
         for col2 in col_iterator_2:
