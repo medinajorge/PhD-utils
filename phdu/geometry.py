@@ -1,6 +1,7 @@
 import numpy as np
 from numba import njit, prange
 from numba.types import boolean
+import matplotlib.pyplot as plt
 
 @njit
 def is_point_on_line(p0, p1, q):
@@ -67,3 +68,43 @@ def centroid_irregular_polygon(vertices):
     C_y = C_y / (6 * A)
 
     return np.array([C_x, C_y])
+
+def extract_contour_polygons(x, y, z, level=None):
+    """
+    Extracts contour polygons from a 3D plot.
+
+    Parameters:
+    x (1D numpy.ndarray): The x-coordinates of the points on the contour.
+    y (1D numpy.ndarray): The y-coordinates of the points on the contour.
+    z (2D numpy.ndarray): The z-coordinates of the points on the contour.
+    level (float, optional): The level for which to extract the contour polygons. If None, all levels are extracted.
+
+    Returns:
+    levels: A numpy array of contour levels (only if level is None).
+    polygons: A list of contour polygons. Each polygon is represented by a numpy.ndarray of its vertices.
+    """
+    fig, ax = plt.subplots()
+
+    if level is None:
+        contour = ax.contour(x, y, z)
+        levels = []
+        polygons = []
+        for i, collection in enumerate(contour.collections):
+            contour_level = contour.levels[i]
+            for path in collection.get_paths():
+                vertices = path.vertices
+                levels.append(contour_level)
+                polygons.append(vertices)
+        levels = np.array(levels)
+        plt.close()
+        return levels, polygons
+    else:
+        contour = ax.contour(x, y, z, levels=[-1000])
+        contour_polygons = []
+        for collection in contour.collections:
+            for path in collection.get_paths():
+                # Step 3: Get the vertices of the polygon (the contour path)
+                vertices = path.vertices
+                contour_polygons.append(vertices)
+        plt.close()
+        return contour_polygons
