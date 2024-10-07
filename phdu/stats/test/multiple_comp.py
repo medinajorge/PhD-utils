@@ -1,5 +1,8 @@
 """
 Functions related to multiple comparisons.
+
+When performing multiple comparisons, the probability of making at least one Type I error (false positive) increases.
+It is likely that at least 1 test will be significant by chance.
 """
 
 from scipy.stats import binom

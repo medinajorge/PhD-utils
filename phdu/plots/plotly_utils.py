@@ -136,9 +136,12 @@ def get_subplots(cols, rows=1, horizontal_spacing=0.03, vertical_spacing=0.03, h
         fig.update_layout(**mod_simple_axes(fig), plot_bgcolor='white')
     return fig
 
-def transparent_colorscale(fig, threshold=1e-10):
+def transparent_colorscale(fig=None, colorscale=None, threshold=1e-10):
     """Values below threshold are invisible."""
-    colorscale = fig.layout["coloraxis"]["colorscale"]
+    if fig is not None:
+        colorscale = fig.layout["coloraxis"]["colorscale"]
+    else:
+        assert colorscale is not None, "fig or colorscale must be provided."
     low_limit = colorscale[0]
     new_low_limit = (threshold, low_limit[1])
     new_colorscale = ((0, 'rgba(0,0,0,0)'), new_low_limit, *colorscale[1:])
