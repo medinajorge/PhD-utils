@@ -630,7 +630,7 @@ def _compute_CI_percentile(boot_sample, alpha, alternative, to_ptg=False):
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
     return CI
 
-def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=1, use_numba='auto', **kwargs):
+def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=1, use_numba='auto', return_resamples=False, **kwargs):
     """
     If data2 is provided, statistic takes two arguments and assumes block resampling if the input data are tuples.
     Optional kwargs for aggregating data, data2 before computing the statistic:
@@ -642,9 +642,13 @@ def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=Fa
         use_numba = isinstance(statistic, CPUDispatcher)
     data, data2, boot_sample, sample_stat, N = _resample(data, data2, use_numba, statistic, R=R, n_min=n_min, smooth=smooth, **kwargs)
     if boot_sample is None:
-        return np.array([np.NaN, np.NaN])
+        CI = np.array([np.NaN, np.NaN])
     else:
-        return _compute_CI_percentile(boot_sample, alpha, alternative)
+        CI = _compute_CI_percentile(boot_sample, alpha, alternative)
+    if return_resamples:
+        return CI, boot_sample
+    else:
+        return CI
 
 def CI_all(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sided', coverage_iters=int(1e5), coverage_seed=42, avg_len=3, exclude=['studentized_vs', 'studentized_vs_smooth']):
     """
