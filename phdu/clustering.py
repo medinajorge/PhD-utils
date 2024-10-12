@@ -16,6 +16,8 @@ except:
     pass
 try:
     import networkx as nx
+except:
+    pass
 
 def graph_cluster(X, threshold, exclude_singleton=True, labels=None):
     """
