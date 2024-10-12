@@ -89,7 +89,7 @@ def hierarchical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1,
         set_multicategory_from_df(fig, df_ordered)
     return fig
 
-def corr_cluster_matrix(df, method='spearman', alpha=0.05, absolute_value=False, correct_by_multiple_comp=True, **kwargs):
+def corr_cluster_matrix(df, method='spearman', alpha=0.05, absolute_value=False, correct_by_multiple_comp='by', **kwargs):
     """"
     corr:  spearman, pearson.
     """
