@@ -85,8 +85,8 @@ def ci_percentile_equal_tailed(x, p, alpha=0.05, alternative='two-sided', x_H1=N
         - alternative: 'two-sided', 'less', 'greater'
         - x_H1: if provided, returns the p_value:
             - 'two-sided': 2 * min(p_value_less, p_value_greater). H1: x != x_H1
-            - 'less': p_value_less. H1: x < x_H1
-            - 'greater': p_value_greater. H1: x > x_H1
+            - 'less': upper bound. H1: x < x_H1
+            - 'greater': lower bound. H1: x > x_H1
 
     Returns CI [Yi, Yj] such that Prob(x in CI) => 1 - alpha. Yi, Yj are order statistics.
     https://online.stat.psu.edu/stat415/book/export/html/835

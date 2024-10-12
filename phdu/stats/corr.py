@@ -12,7 +12,7 @@ try:
 except NameError:
     from tqdm import tqdm # Probably runing on standard python terminal. If does not work => should be replaced by tqdm(x) = identity(x)
 
-def corr_pruned(df, col=None, method='spearman', alpha=0.05, ns_to_nan=True):
+def corr_pruned(df, col=None, method='spearman', alpha=0.05, ns_to_nan=True, correct_by_multiple_comp='by'):
     """
     Returns correlation between DataFrame features with pvalue < alpha.
 
@@ -23,6 +23,7 @@ def corr_pruned(df, col=None, method='spearman', alpha=0.05, ns_to_nan=True):
     method : str, optional. Correlation method. Default is 'spearman'.
     alpha : float, optional. Significance level. Default is 0.05.
     ns_to_nan : bool, optional. If True, non-significant correlations are set to NaN. Default is True.
+    correct_by_multiple_comp : str, optional. If not None, correct p-values for multiple comparisons. Default is 'by' (benjamini-yekutieli).
     """
     import scipy.stats as ss
     corr_func = getattr(ss, f"{method}r")
@@ -58,6 +59,13 @@ def corr_pruned(df, col=None, method='spearman', alpha=0.05, ns_to_nan=True):
                 p[(col2, col1)] = pval
     c = pd.Series(c).unstack()
     p = pd.Series(p).unstack()
-    if ns_to_nan:
-        c[p > alpha] = np.NaN
-    return c, p
+    if correct_by_multiple_comp is not None:
+        p_corrected = ss.false_discovery_control(p.values.ravel(), method=correct_by_multiple_comp)
+        p_corrected = pd.DataFrame(p_corrected.reshape(p.shape), columns=p.columns, index=p.index)
+        if ns_to_nan:
+            c[p_corrected > alpha] = np.NaN
+    else:
+        p_corrected = None
+        if ns_to_nan:
+            c[p > alpha] = np.NaN
+    return c, p, p_corrected
