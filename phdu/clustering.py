@@ -16,7 +16,7 @@ except:
     pass
 
 
-def hierarchy_dendrogram(X, fontsize=30, out='data'):
+def hierarchy_dendrogram(X, fontsize=30, out='data', method='average'):
     """
     Notes on the linkage matrix:
     This matrix represents a dendrogram, where elements
@@ -24,6 +24,8 @@ def hierarchy_dendrogram(X, fontsize=30, out='data'):
         3: distance between these clusters,
         4: size of the new cluster - the number of original data points included.
     """
+    if method not in ['ward', 'single', 'complete', 'average', 'weighted', 'centroid', 'median']:
+        raise ValueError(f"method '{method}' not valid. Available: 'ward', 'single', 'complete', 'average', 'weighted', 'centroid', 'median'.")
     is_df = isinstance(X, pd.core.frame.DataFrame)
     if is_df:
         labels = X.columns.to_list()
@@ -33,7 +35,8 @@ def hierarchy_dendrogram(X, fontsize=30, out='data'):
     fig = plt.figure(figsize=(8, 12))
     ax = plt.subplot(111)
 
-    corr_linkage = hierarchy.ward(X.values if is_df else X)
+
+    corr_linkage = hierarchy.linkage(X.values if is_df else X, method=method)
     dendro = hierarchy.dendrogram(
         corr_linkage, labels=labels, ax=ax, leaf_rotation=90 #orientation="left"
     )
@@ -50,7 +53,7 @@ def hierarchy_dendrogram(X, fontsize=30, out='data'):
     else:
         raise ValueError(f"out '{out}' not valid. Available: 'data', 'fig'.")
 
-def dendrogram_sort(df, to_distance = lambda x: 1 - x):
+def dendrogram_sort(df, to_distance = lambda x: 1 - x, **kwargs):
     """
     Attempts to sort the rows and columns of a matrix according to the dendrogram.
 
@@ -62,7 +65,7 @@ def dendrogram_sort(df, to_distance = lambda x: 1 - x):
 
     Returns a pandas DataFrame or numpy array with the rows and columns ordered according to the dendrogram
     """
-    _, dendro = hierarchy_dendrogram(to_distance(df))
+    _, dendro = hierarchy_dendrogram(to_distance(df), **kwargs)
     order = dendro["leaves"]
     if isinstance(df, pd.core.frame.DataFrame):
         df = df.iloc[order,:].iloc[:, order]
@@ -73,8 +76,8 @@ def dendrogram_sort(df, to_distance = lambda x: 1 - x):
     return df
 
 
-def hierarchical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1, cmax=1, cmap='inferno'):
-    _, dendro = hierarchy_dendrogram(df)
+def hierarchical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1, cmax=1, cmap='inferno', **kwargs):
+    _, dendro = hierarchy_dendrogram(df, **kwargs)
     order = dendro["leaves"]
     #corr = X.corr() if isinstance(X, pd.core.frame.DataFrame) else np.corrcoef(X)
     df_ordered = df.iloc[order,:].iloc[:, order]
@@ -90,7 +93,8 @@ def corr_cluster_matrix(df, method='spearman', alpha=0.05, absolute_value=False,
     """"
     corr:  spearman, pearson.
     """
-    df_corr = corr.corr_pruned(df, method=method, alpha=alpha, correct_by_multiple_comp=correct_by_multiple_comp, ns_to_nan=True).fillna(0)
+    df_corr = corr.corr_pruned(df, method=method, alpha=alpha, correct_by_multiple_comp=correct_by_multiple_comp, ns_to_nan=True)[0]
+    df_corr = df_corr.fillna(0)
     title = method.capitalize()
     if absolute_value:
         df_corr = df_corr.abs()
