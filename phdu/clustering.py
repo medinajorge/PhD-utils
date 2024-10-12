@@ -86,11 +86,11 @@ def hierarchical_cluster_matrix(df, title, colorbar_x=0.9, ticksize=16, cmin=-1,
         set_multicategory_from_df(fig, df_ordered)
     return fig
 
-def corr_cluster_matrix(df, method='spearman', alpha=0.05, absolute_value=False, **kwargs):
+def corr_cluster_matrix(df, method='spearman', alpha=0.05, absolute_value=False, correct_by_multiple_comp=True, **kwargs):
     """"
     corr:  spearman, pearson.
     """
-    df_corr = corr.corr_pruned(df, method=method, alpha=alpha).fillna(0)
+    df_corr = corr.corr_pruned(df, method=method, alpha=alpha, correct_by_multiple_comp=correct_by_multiple_comp, ns_to_nan=True).fillna(0)
     title = method.capitalize()
     if absolute_value:
         df_corr = df_corr.abs()
