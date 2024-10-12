@@ -14,7 +14,48 @@ try:
     from .plots.plotly_utils import get_figure, set_multicategory_from_df
 except:
     pass
+try:
+    import networkx as nx
 
+def graph_cluster(X, threshold, exclude_singleton=True, labels=None):
+    """
+    Creates a graph from a 2D data matrix and returns the clusters. Nodes u, v are connected if X[u, v] > threshold.
+
+    Parameters:
+    X (numpy.ndarray or pandas.DataFrame): 2D data
+    threshold (float): The threshold for the edge weights. Edges with weights greater than this value are included in the graph.
+    exclude_singleton (bool, optional): If True, singleton clusters (clusters with only one node) are excluded. Defaults to True.
+    labels (list, optional): A list of labels for the nodes. If None, the nodes are labeled with their indices. Defaults to None.
+
+    Returns:
+    dict: A dictionary where the keys are cluster indices and the values are lists of nodes in the cluster.
+    """
+    is_df = isinstance(X, pd.core.frame.DataFrame)
+    if labels is not None:
+        idx_to_label = {i: l for i, l in enumerate(labels)}
+    elif is_df: # extract from index
+        idx_to_label = {i: l for i, l in enumerate(X.index)}
+    else:
+        idx_to_label = None
+
+    i, j = np.where(X > threshold)
+    G = nx.Graph()
+    G.add_edges_from(zip(i, j))
+    clusters = list(nx.connected_components(G))
+
+    if idx_to_label is None:
+        if exclude_singleton:
+            clusters = [cluster for cluster in clusters if len(cluster) > 1]
+        clusters = {k: cluster for k, cluster in enumerate(clusters)}
+        return clusters
+    else:
+        clusters_dict = {}
+        k = 0
+        for cluster in clusters:
+            if len(cluster) > 1 or not exclude_singleton:
+                clusters_dict[k] = [idx_to_label[i] for i in cluster]
+                k += 1
+        return clusters_dict
 
 def hierarchy_dendrogram(X, fontsize=30, out='data', method='average'):
     """
