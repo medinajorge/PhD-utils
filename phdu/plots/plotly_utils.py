@@ -133,7 +133,7 @@ def get_subplots(cols, rows=1, horizontal_spacing=0.03, vertical_spacing=0.03, h
     if delete_axes:
         fig.update_layout(**mod_delete_axes(fig), margin=dict(l=0, t=0, b=0, r=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     elif simple_axes:
-        fig.update_layout(**mod_simple_axes(fig), plot_bgcolor='white')
+        fig.update_layout(**mod_simple_axes(fig),  plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
     return fig
 
 def transparent_colorscale(fig=None, colorscale=None, threshold=1e-10):
