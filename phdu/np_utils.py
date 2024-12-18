@@ -38,7 +38,7 @@ def numpy_fill(arr):
     '''Fills nan with previous not-NaN values'''
     mask = np.isnan(arr)
     if mask.all():
-        return np.NaN
+        return np.nan
     else:
         idx = np.where(~mask, np.arange(mask.shape[0]), 0)
         np.maximum.accumulate(idx,axis=0, out=idx)

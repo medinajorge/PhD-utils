@@ -148,10 +148,10 @@ def insert_level_sep(df, row_seps=1, col_seps=1):
     row_levels = df.index.get_level_values(0).unique()
     for l in col_levels[:-1]:
         for k in range(col_seps):
-            df_c[(l, " "*k)] = np.NaN
+            df_c[(l, " "*k)] = np.nan
     for l in row_levels[:-1]:
         for k in range(row_seps):
-            df_c.loc[(l, " "*k), :] = np.NaN
+            df_c.loc[(l, " "*k), :] = np.nan
     return df_c[col_levels].loc[row_levels]
 
 def expand_sequences(df, dt=1, maxlen=None):
@@ -162,12 +162,12 @@ def expand_sequences(df, dt=1, maxlen=None):
     """
     if df.isna().values.any():
         if maxlen is None:
-            maxlen = int(df.applymap(lambda x: x.size if isinstance(x, np.ndarray) else np.NaN).max().max())
-        df_padded = df.applymap(lambda x: np.hstack((x, np.NaN*np.empty((maxlen-x.size)))) if isinstance(x, np.ndarray) else np.NaN*np.empty((maxlen)))
+            maxlen = int(df.applymap(lambda x: x.size if isinstance(x, np.ndarray) else np.nan).max().max())
+        df_padded = df.applymap(lambda x: np.hstack((x, np.nan*np.empty((maxlen-x.size)))) if isinstance(x, np.ndarray) else np.nan*np.empty((maxlen)))
     else:
         if maxlen is None:
             maxlen = int(df.applymap(lambda x: x.size).values.max())
-        df_padded = df.applymap(lambda x: np.hstack((x, np.NaN*np.empty((maxlen-x.size)))))
+        df_padded = df.applymap(lambda x: np.hstack((x, np.nan*np.empty((maxlen-x.size)))))
     df_padded_arr = np.stack([np.vstack(x) for x in df_padded.values]) # shape (df.shape[0], df.shape[1], time_steps)
     return pd.DataFrame(df_padded_arr.reshape((df.shape[0], -1)),
                         index = df.index,
@@ -206,7 +206,7 @@ def vstack_wise(*dfs):
     """
     dfs, is_series = _ensure_df(dfs)
     R = np.rec.fromarrays(tuple(df.values for df in dfs))
-    df1_df2 = pd.Series([np.vstack(i) if all(isinstance(j, np.ndarray) for j in i) else np.NaN for i in R.flatten()], dtype=object,
+    df1_df2 = pd.Series([np.vstack(i) if all(isinstance(j, np.ndarray) for j in i) else np.nan for i in R.flatten()], dtype=object,
                         index=dfs[0].stack(dropna=False).index).unstack()
     if is_series:
         df1_df2 = df1_df2.squeeze()

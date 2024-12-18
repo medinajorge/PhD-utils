@@ -63,9 +63,9 @@ def corr_pruned(df, col=None, method='spearman', alpha=0.05, ns_to_nan=True, cor
         p_corrected = ss.false_discovery_control(p.values.ravel(), method=correct_by_multiple_comp)
         p_corrected = pd.DataFrame(p_corrected.reshape(p.shape), columns=p.columns, index=p.index)
         if ns_to_nan:
-            c[p_corrected > alpha] = np.NaN
+            c[p_corrected > alpha] = np.nan
     else:
         p_corrected = None
         if ns_to_nan:
-            c[p > alpha] = np.NaN
+            c[p > alpha] = np.nan
     return c, p, p_corrected

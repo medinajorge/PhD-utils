@@ -94,7 +94,7 @@ def ci_percentile_equal_tailed(x, p, alpha=0.05, alternative='two-sided', x_H1=N
     n = x.size
     if n <= 2:
         warnings.warn(f"n = {n} is too small. Returning NaN", RuntimeWarning)
-        return np.NaN
+        return np.nan
     else:
         if n < 500:
             def binom_cdf(x):

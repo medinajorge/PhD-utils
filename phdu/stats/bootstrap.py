@@ -365,7 +365,7 @@ def _resample(data, data2, use_numba, statistic, R, n_min=1, smooth=False, aggre
                 resample_kwargs = dict(aggregator=aggregator)
             else:
                 N = 0
-                sample_stat = np.NaN
+                sample_stat = np.nan
         else:
             if data.ndim == 1:
                 data = data[:, None]
@@ -412,7 +412,7 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
     data, data2, theta_hat_b, sample_stat, N = _resample(data, data2, use_numba, statistic, R=R, n_min=n_min, aggregator=aggregator, **kwargs)
 
     if theta_hat_b is None:
-        return np.array([np.NaN, np.NaN])
+        return np.array([np.nan, np.nan])
 
     alpha_bca = _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba, aggregator=aggregator)[0]
 
@@ -570,7 +570,7 @@ def _bootstrap_studentized_resampling(data, statistic, alpha=0.05, R=10000, stud
             return t_result, std_err
     else:
         def get_studentized(data_r, result, seed):
-            return result - base, np.NaN
+            return result - base, np.nan
 
     data_r = resample_nb_X(data, R=R, seed=seed, smooth=smooth)
     if se_func is None:
@@ -642,7 +642,7 @@ def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=Fa
         use_numba = isinstance(statistic, CPUDispatcher)
     data, data2, boot_sample, sample_stat, N = _resample(data, data2, use_numba, statistic, R=R, n_min=n_min, smooth=smooth, **kwargs)
     if boot_sample is None:
-        CI = np.array([np.NaN, np.NaN])
+        CI = np.array([np.nan, np.nan])
     else:
         CI = _compute_CI_percentile(boot_sample, alpha, alternative)
     if return_resamples:
