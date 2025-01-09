@@ -134,3 +134,37 @@ def parse_optuna_output(file_path, direction='minimize'):
     elif direction is not None:
         raise ValueError(f"Invalid direction: {direction}")
     return df
+
+def cmd_incompleted_scripts(script, pdir='nuredduna_programmes/stdin_files', sleep_time=0, c=1, m=6, g=0, t="4:0", G=None):
+    def dict_to_args(d):
+        return " ".join([f"-{k} {v}" for k, v in d.items()])
+    def dict_to_id(d):
+        return "_".join([f"{k}-{v}" for k, v in d.items()])
+
+    if script.endswith(".py"):
+        script = os.path.splitext(script)[0]
+
+    stdin_dir = os.path.basename(pdir)
+    ID_pattern = f'{stdin_dir}/{script}_'
+
+    run_specs = f"-c {c} -m {m} -g {g} -t {t}"
+    if G is not None:
+        run_specs += f" -G {G}"
+
+    run_pattern = 'run {} -e {}.err -o {}.out "python {}.py {}"'
+    combs = []
+    for f in os.listdir(pdir):
+        if f.endswith("out"):
+            f, _ = os.path.splitext(f)
+            # Updated regex to match all key-value pairs, including upper-case and hyphenated values
+            pattern = r"(?:_|^)([a-zA-Z])-([0-9a-zA-Z.-]+)(?=_|$)"
+            matches = re.findall(pattern, f)
+            match_dict = dict(zip(*zip(*matches)))
+            ID = ID_pattern + dict_to_id(match_dict)
+            cmd = run_pattern.format(run_specs, ID, ID, script, dict_to_args(match_dict))
+            combs.append(cmd)
+    if sleep_time > 0:
+        print(f"\nsleep {sleep_time}\n".join(combs))
+    else:
+        print("\n".join(combs))
+    return  combs
