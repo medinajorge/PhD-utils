@@ -20,7 +20,7 @@ def load_R_pkg(pkg):
 
 def attr_preprocess(func, attrs, clear_env=False):
     """
-    Python enviroment -> R environment. 
+    Python enviroment -> R environment.
     Returns: str version of **kwargs.
     """
     var_kwd_names = [p.name for p in inspect.signature(func).parameters.values() if p.kind.name == "VAR_KEYWORD"]
@@ -32,7 +32,7 @@ def attr_preprocess(func, attrs, clear_env=False):
         else:
             kwargs_str = ""
         del attrs[var_kwd_name]
-    
+
     if clear_env:
         ro.globalenv.clear()
     for k, v in attrs.items():

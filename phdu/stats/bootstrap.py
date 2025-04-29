@@ -603,7 +603,7 @@ def CI_studentized(data, statistic, R=int(1e5), alpha=0.05, alternative='two-sid
         CI = compute_CI_studentized(base, results, studentized_results, alpha=alpha, alternative=alternative)
     return CI
 
-def _compute_CI_percentile(boot_sample, alpha, alternative, to_ptg=False):
+def _compute_CI_percentile(boot_sample, alpha, alternative, to_ptg=False, exclude_nans=False):
     if isinstance(alpha, np.ndarray) and alpha.ndim == 2: # variable alpha for each output. Used for CI_bca
         return np.vstack(_compute_CI_percentile(boot_sample[:,i], alpha[i], alternative, to_ptg) for i in range(alpha.shape[0]))
     alpha_iter = isinstance(alpha, Iterable)
@@ -619,13 +619,18 @@ def _compute_CI_percentile(boot_sample, alpha, alternative, to_ptg=False):
         output_len = 1
     else:
         output_len = boot_sample.shape[1]
+    if exclude_nans:
+        percentile = np.nanpercentile
+    else:
+        percentile = np.percentile
+
     if alternative == 'two-sided':
-        CI = np.percentile(boot_sample, alpha_ptg if alpha_iter else [alpha_ptg/2, 100 - alpha_ptg/2], axis=0).T
+        CI = percentile(boot_sample, alpha_ptg if alpha_iter else [alpha_ptg/2, 100 - alpha_ptg/2], axis=0).T
         CI = np.atleast_2d(CI)
     elif alternative == 'less':
-        CI = np.vstack((-np.inf * np.ones((output_len)), np.percentile(boot_sample, alpha_ptg[0] if alpha_iter else 100-alpha_ptg, axis=0))).T
+        CI = np.vstack((-np.inf * np.ones((output_len)), percentile(boot_sample, alpha_ptg[0] if alpha_iter else 100-alpha_ptg, axis=0))).T
     elif alternative == 'greater':
-        CI = np.vstack((np.percentile(boot_sample, alpha_ptg[0] if alpha_iter else alpha_ptg, axis=0), np.inf * np.ones((output_len)))).T
+        CI = np.vstack((percentile(boot_sample, alpha_ptg[0] if alpha_iter else alpha_ptg, axis=0), np.inf * np.ones((output_len)))).T
     else:
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
     return CI
