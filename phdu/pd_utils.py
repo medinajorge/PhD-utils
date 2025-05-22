@@ -8,8 +8,12 @@ from functools import reduce
 from .stats.rtopy import resample
 from .stats.test import permutation
 
-def latex_table(df, index=False, **kwargs):
+def latex_table(DF, index=False, CI_table=False, **kwargs):
     """Pandas DataFrame -> Latex table."""
+    if CI_table:
+        df = DF.map(lambda x: x.replace('[', '\n\n['))
+    else:
+        df = DF.copy()
     col_format = "c" if isinstance(df, pd.core.series.Series) else "c"*len(df.columns)
     if index:
         col_format += "c"
