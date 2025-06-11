@@ -23,7 +23,7 @@ def corr_pruned(df, col=None, method='spearman', alpha=0.05, ns_to_nan=True, cor
     method : str, optional. Correlation method. Default is 'spearman'.
     alpha : float, optional. Significance level. Default is 0.05.
     ns_to_nan : bool, optional. If True, non-significant correlations are set to NaN. Default is True.
-    correct_by_multiple_comp : str, optional. If not None, correct p-values for multiple comparisons. Default is 'by' (benjamini-yekutieli).
+    correct_by_multiple_comp : str, optional. If not None, correct p-values for multiple comparisons. Default is 'by' (benjamini-yekutieli). Options: 'bonferroni', 'bh', 'by'.
     """
     import scipy.stats as ss
     corr_func = getattr(ss, f"{method}r")
