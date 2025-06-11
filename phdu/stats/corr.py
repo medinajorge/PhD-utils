@@ -60,8 +60,13 @@ def corr_pruned(df, col=None, method='spearman', alpha=0.05, ns_to_nan=True, cor
     c = pd.Series(c).unstack()
     p = pd.Series(p).unstack()
     if correct_by_multiple_comp is not None:
-        p_corrected = ss.false_discovery_control(p.values.ravel(), method=correct_by_multiple_comp)
-        p_corrected = pd.DataFrame(p_corrected.reshape(p.shape), columns=p.columns, index=p.index)
+        if correct_by_multiple_comp == 'bonferroni':
+            N = df.shape[1]
+            num_comparisons = N*(N-1) / 2
+            p_corrected = p * num_comparisons
+        else:
+            p_corrected = ss.false_discovery_control(p.values.ravel(), method=correct_by_multiple_comp)
+            p_corrected = pd.DataFrame(p_corrected.reshape(p.shape), columns=p.columns, index=p.index)
         if ns_to_nan:
             c[p_corrected > alpha] = np.nan
     else:
