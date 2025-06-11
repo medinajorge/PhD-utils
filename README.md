@@ -1,6 +1,7 @@
 # PhD-utils
 
 For people that have to compute and store a large variety of data and/or perform statistical inference.
+Check the [tidypath and PhD-utils slides](https://github.com/medinajorge/PhD-utils/blob/master/tidypath_and_phdu.odp) for an overview.
 
 ## Keep your files tidy!
 
@@ -17,12 +18,13 @@ Calculate the power for accepting H0 and estimate the needed sample size.
 Function `power_analysis` in `phdu.stats.bootstrap` follows Efron-Tshibirani: An introduction to the bootstrap,  p. 381-384.
 
 ## Numba-accelerated permutation tests
-Module `phdu.stats.tests.permutation`. 
-- Permutation tests for any statistic. 
+Module `phdu.stats.tests.permutation`.
+- Permutation tests for any statistic.
 - Includes paired and block cases.
 
 ## Demo
-Please check the [example notebook](https://github.com/medinajorge/PhD-utils/blob/master/tests/Example.ipynb).
+- [tidypath and PhD-utils slides](https://github.com/medinajorge/PhD-utils/blob/master/tidypath_and_phdu.odp): instructions and use cases.
+- [Example notebook](https://github.com/medinajorge/PhD-utils/blob/master/tests/Example.ipynb)
 
 ## Documentation
 [Github pages](https://medinajorge.github.io/PhD-utils/phdu.html)
@@ -31,9 +33,9 @@ Please check the [example notebook](https://github.com/medinajorge/PhD-utils/blo
 - For the R compatible installation first install R:
 
   ```conda install -c conda-forge r r-essentials r-base```
-  
+
 - Install with dependencies:
 
   ```pip install phdu[dependencies]```
-  
+
   Where `dependencies` can be `base` (recommended), `all`, `r` (needed for `resample` to work), `statsmodels`, `matplotlib` or `plotly`.
