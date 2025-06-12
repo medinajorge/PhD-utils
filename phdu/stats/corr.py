@@ -14,16 +14,49 @@ except NameError:
 
 def corr_pruned(df, col=None, method='spearman', alpha=0.05, ns_to_nan=True, correct_by_multiple_comp='by'):
     """
-    Returns correlation between DataFrame features with pvalue < alpha.
+    Compute correlation matrix with statistical significance testing.
+
+    Returns correlation coefficients between DataFrame features where the
+    corresponding p-value (optionally adjusted by multiple comparisons)
+    is less than the specified significance level.
+    Non-significant correlations can optionally be masked as NaN values.
 
     Parameters
     ----------
-    df : pd.DataFrame
-    col : str, optional. Single column to correlate with all other columns. If None, all correlations are computed.
-    method : str, optional. Correlation method. Default is 'spearman'.
-    alpha : float, optional. Significance level. Default is 0.05.
-    ns_to_nan : bool, optional. If True, non-significant correlations are set to NaN. Default is True.
-    correct_by_multiple_comp : str, optional. If not None, correct p-values for multiple comparisons. Default is 'by' (benjamini-yekutieli). Options: 'bonferroni', 'bh', 'by'.
+    df : pandas.DataFrame
+        Input DataFrame containing numeric features for correlation analysis.
+    col : str, optional
+        Single column name to correlate with all other columns. If None,
+        computes pairwise correlations between all columns. Default is None.
+    method : {'spearman', 'pearson'}, optional
+        Correlation method to use. Default is 'spearman'.
+    alpha : float, optional
+        Significance level for hypothesis testing. Correlations with (possibly adjusted) p-values
+        greater than alpha are considered non-significant. Default is 0.05.
+    ns_to_nan : bool, optional
+        If True, non-significant correlations (p-value > alpha) are replaced
+        with NaN values in the output. Default is True.
+    correct_by_multiple_comp : {'bonferroni', 'bh', 'by', None}, optional
+        Method for multiple comparison correction of p-values. Options are:
+        - 'bonferroni': Bonferroni correction (Family-wise error rate)
+        - 'bh': Benjamini-Hochberg (False Discovery Rate)
+        - 'by': Benjamini-Yekutieli (more conservative FDR, valid under arbitrary dependence)
+        - None: No correction applied
+        Default is 'by'.
+
+    Returns
+    -------
+    c : pandas.DataFrame
+        Correlation matrix with the same index and columns as input DataFrame
+        (or subset if `col` is specified). Non-significant correlations are
+        set to NaN if `ns_to_nan=True`.
+    p : pandas.DataFrame
+        Matrix of uncorrected p-values corresponding to the correlation
+        coefficients. Same shape as correlation matrix.
+    p_corrected : pandas.DataFrame | None
+        Matrix of p-values after multiple comparison correction (if applied).
+        If `correct_by_multiple_comp=None`, this is set to None.
+        Else, has the same shape as correlation matrix.
     """
     import scipy.stats as ss
     corr_func = getattr(ss, f"{method}r")
@@ -63,7 +96,8 @@ def corr_pruned(df, col=None, method='spearman', alpha=0.05, ns_to_nan=True, cor
         if correct_by_multiple_comp == 'bonferroni':
             N = df.shape[1]
             num_comparisons = N*(N-1) / 2
-            p_corrected = p * num_comparisons
+            p_corrected = pd.DataFrame(np.clip(p.values * num_comparisons, 0, 1),
+                                       columns=p.columns, index=p.index)
         else:
             p_corrected = ss.false_discovery_control(p.values.ravel(), method=correct_by_multiple_comp)
             p_corrected = pd.DataFrame(p_corrected.reshape(p.shape), columns=p.columns, index=p.index)
