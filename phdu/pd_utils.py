@@ -182,6 +182,14 @@ def _ensure_df(dfs):
     dfs = [df.to_frame() if isinstance(df, pd.Series) else df for df in dfs]
     return dfs, is_series
 
+def _revert_to_series(out, df_0):
+    if out.shape[0] == 1:
+        out = out.iloc[:, 0]
+        out.name = df_0.index.name
+    else:
+        out = out.squeeze()
+    return out
+
 def tuple_wise(*dfs, check_index=True, check_columns=True):
     """
     Attributes: Dataframes with same indices and columns. If the input are Series, they are converted to DataFrames.
@@ -199,7 +207,7 @@ def tuple_wise(*dfs, check_index=True, check_columns=True):
                        columns=df.columns,
                        index=df.index)
     if is_series:
-        out = out.squeeze()
+        out = _revert_to_series(out, df)
     return out
 
 def vstack_wise(*dfs):
@@ -213,7 +221,7 @@ def vstack_wise(*dfs):
     df1_df2 = pd.Series([np.vstack(i) if all(isinstance(j, np.ndarray) for j in i) else np.nan for i in R.flatten()], dtype=object,
                         index=dfs[0].stack(dropna=False).index).unstack()
     if is_series:
-        df1_df2 = df1_df2.squeeze()
+        df1_df2 = _revert_to_series(df1_df2, dfs[0])
     return df1_df2
 
 def column_diffs(df, mode="to", mod_col=lambda x: "".join(np.array([*x])[[0, -1]])):
