@@ -185,7 +185,7 @@ def _ensure_df(dfs):
 def _revert_to_series(out, df_0):
     if out.shape[0] == 1:
         out = out.iloc[:, 0]
-        out.name = df_0.index.name
+        out.name = df_0.iloc[:, 0].name
     else:
         out = out.squeeze()
     return out
