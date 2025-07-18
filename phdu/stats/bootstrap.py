@@ -432,6 +432,12 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
     #elif alternative == 'greater':
     #    return np.array([np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0), np.inf])
 
+def _atleast_2d_rev(arr):
+    if arr.ndim == 1:
+        return arr[:, None]
+    else:
+        return arr
+
 def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba, aggregator=None, exclude_nans=False):
     """Bias-corrected and accelerated interval."""
     # calculate z0_hat
@@ -444,7 +450,7 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
         else:
             theta_hat = statistic(data, data2)
     if exclude_nans:
-        valid = ~(np.isnan(np.atleast_2d(theta_hat_b)).any(axis=1))
+        valid = ~(np.isnan(_atleast_2d_rev(theta_hat_b)).any(axis=1))
         if not valid.all():
             print("excluded nans from the resampled statistics")
             theta_hat_b = theta_hat_b[valid]
@@ -458,7 +464,7 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
     else:
         theta_hat_jk = jackknife_stat_two_samples(data, data2, statistic, aggregator=aggregator)
     if exclude_nans:
-        valid = ~(np.isnan(np.atleast_2d(theta_hat_jk)).any(axis=1))
+        valid = ~(np.isnan(_atleast_2d_rev(theta_hat_jk)).any(axis=1))
         theta_hat_jk = theta_hat_jk[valid]
 
     n = theta_hat_jk.shape[0]
