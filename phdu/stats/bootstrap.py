@@ -390,7 +390,7 @@ def _resample(data, data2, use_numba, statistic, R, n_min=1, smooth=False, aggre
             #     data2 = np.hstack(data2)
     return data, data2, theta_hat_b, sample_stat, N
 
-def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba='auto', n_min=1, aggregator=_nb_mean, **kwargs):
+def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba='auto', n_min=1, aggregator=_nb_mean, exclude_nans=False, **kwargs):
     """
     If data2 is provided, assumes a block resampling and statistic takes two arguments.
     Optional kwargs for aggregating data, data2 before computing the statistic:
@@ -414,7 +414,7 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
     if theta_hat_b is None:
         return np.array([np.nan, np.nan])
 
-    alpha_bca = _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba, aggregator=aggregator)[0]
+    alpha_bca = _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba, aggregator=aggregator, exclude_nans=exclude_nans)[0]
 
     if np.isnan(alpha_bca).all():
         warnings.warn('CI shows there is only one value. Check data.', RuntimeWarning)
@@ -424,7 +424,7 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
             sample_stat = statistic(data, data2)
         return np.array([sample_stat, sample_stat])
     else:
-        return _compute_CI_percentile(theta_hat_b, alpha_bca, alternative, to_ptg=True)
+        return _compute_CI_percentile(theta_hat_b, alpha_bca, alternative, to_ptg=True, exclude_nans=exclude_nans)
     #elif alternative == 'two-sided':
     #    return  np.percentile(theta_hat_b, alpha_bca*100, axis=0)
     #elif alternative == 'less':
@@ -432,7 +432,7 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
     #elif alternative == 'greater':
     #    return np.array([np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0), np.inf])
 
-def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba, aggregator=None):
+def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba, aggregator=None, exclude_nans=False):
     """Bias-corrected and accelerated interval."""
     # calculate z0_hat
     if data2 is None:
@@ -443,6 +443,10 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
                                   np.array([aggregator(di) for di in data2]))
         else:
             theta_hat = statistic(data, data2)
+    if exclude_nans:
+        print("excluded nans from the resampled statistics")
+        valid = ~(np.isnan(np.atleast_2d(theta_hat_b)).any(axis=1))
+        theta_hat_b = theta_hat_b[valid]
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=0, account_equal=account_equal)
     z0_hat = ndtri(percentile)
 
@@ -452,6 +456,10 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
         theta_hat_jk = jackknife_computer(data, statistic)  # jackknife resample
     else:
         theta_hat_jk = jackknife_stat_two_samples(data, data2, statistic, aggregator=aggregator)
+    if exclude_nans:
+        valid = ~(np.isnan(np.atleast_2d(theta_hat_jk)).any(axis=1))
+        theta_hat_jk = theta_hat_jk[valid]
+
     n = theta_hat_jk.shape[0]
     theta_hat_jk_dot = theta_hat_jk.mean(axis=0)
 
