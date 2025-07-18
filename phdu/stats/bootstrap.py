@@ -415,7 +415,6 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
         return np.array([np.nan, np.nan])
 
     alpha_bca = _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use_numba, aggregator=aggregator, exclude_nans=exclude_nans)[0]
-    alpha_bca = np.clip(alpha_bca, 0, 1)
 
     if np.isnan(alpha_bca).all():
         warnings.warn('CI shows there is only one value. Check data.', RuntimeWarning)
