@@ -444,9 +444,10 @@ def _bca_interval(data, data2, statistic, probs, theta_hat_b, account_equal, use
         else:
             theta_hat = statistic(data, data2)
     if exclude_nans:
-        print("excluded nans from the resampled statistics")
         valid = ~(np.isnan(np.atleast_2d(theta_hat_b)).any(axis=1))
-        theta_hat_b = theta_hat_b[valid]
+        if not valid.all():
+            print("excluded nans from the resampled statistics")
+            theta_hat_b = theta_hat_b[valid]
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=0, account_equal=account_equal)
     z0_hat = ndtri(percentile)
 
