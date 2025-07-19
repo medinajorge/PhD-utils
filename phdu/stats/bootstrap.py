@@ -650,7 +650,7 @@ def _compute_CI_percentile(boot_sample, alpha, alternative, to_ptg=False, exclud
         raise ValueError(f"alternative '{alternative}' not valid. Available: 'two-sided', 'less', 'greater'.")
     return CI
 
-def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=1, use_numba='auto', return_resamples=False, **kwargs):
+def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=False, alternative='two-sided', n_min=1, use_numba='auto', return_resamples=False, exclude_nans=False, **kwargs):
     """
     If data2 is provided, statistic takes two arguments and assumes block resampling if the input data are tuples.
     Optional kwargs for aggregating data, data2 before computing the statistic:
@@ -664,7 +664,7 @@ def CI_percentile(data, statistic, data2=None, R=int(1e5), alpha=0.05, smooth=Fa
     if boot_sample is None:
         CI = np.array([np.nan, np.nan])
     else:
-        CI = _compute_CI_percentile(boot_sample, alpha, alternative)
+        CI = _compute_CI_percentile(boot_sample, alpha, alternative, exclude_nans=exclude_nans)
     if return_resamples:
         return CI, boot_sample
     else:
