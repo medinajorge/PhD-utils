@@ -390,7 +390,7 @@ def _resample(data, data2, use_numba, statistic, R, n_min=1, smooth=False, aggre
             #     data2 = np.hstack(data2)
     return data, data2, theta_hat_b, sample_stat, N
 
-def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba='auto', n_min=1, aggregator=_nb_mean, exclude_nans=False, **kwargs):
+def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=int(1e5), account_equal=False, use_numba='auto', n_min=1, aggregator=_nb_mean, exclude_nans=False, return_resamples=False, **kwargs):
     """
     If data2 is provided, assumes a block resampling and statistic takes two arguments.
     Optional kwargs for aggregating data, data2 before computing the statistic:
@@ -422,15 +422,14 @@ def CI_bca(data, statistic, data2=None, alternative='two-sided', alpha=0.05, R=i
             sample_stat = statistic(data)
         else:
             sample_stat = statistic(data, data2)
-        return np.array([sample_stat, sample_stat])
+        ci = np.array([sample_stat, sample_stat])
     else:
-        return _compute_CI_percentile(theta_hat_b, alpha_bca, alternative, to_ptg=True, exclude_nans=exclude_nans)
-    #elif alternative == 'two-sided':
-    #    return  np.percentile(theta_hat_b, alpha_bca*100, axis=0)
-    #elif alternative == 'less':
-    #     return np.array([-np.inf, np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0)])
-    #elif alternative == 'greater':
-    #    return np.array([np.percentile(theta_hat_b, alpha_bca[0]*100, axis=0), np.inf])
+        ci = _compute_CI_percentile(theta_hat_b, alpha_bca, alternative, to_ptg=True, exclude_nans=exclude_nans)
+
+    if return_resamples:
+        return ci, theta_hat_b
+    else:
+        return ci
 
 def _atleast_2d_rev(arr):
     if arr.ndim == 1:
