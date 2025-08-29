@@ -4,6 +4,10 @@ Helper functions.
 import numpy as np
 import pandas as pd
 
+class DefaultValueDict(dict):
+    def __missing__(self, key):
+        return key
+
 def sequence_or_stream(x, maxlen=None):
     """
     if maxlen is None => returns a stream
