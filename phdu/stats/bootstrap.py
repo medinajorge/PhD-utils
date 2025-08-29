@@ -52,7 +52,7 @@ def resample_paired_nb(X, Y, func, output_len=1, R=int(1e5), seed=0):
     return boot_sample
 
 @njit
-def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=0):
+def _resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=0):
     """X: array of shape (N, n_vars)."""
     np.random.seed(seed)
     n, num_vars = X.shape
@@ -75,7 +75,7 @@ def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=0):
     return data_resampled
 
 @njit
-def resample_nb_X_multidim(X, R=int(1e5), seed=0, N=0):
+def _resample_nb_X_multidim(X, R=int(1e5), seed=0, N=0):
     """X: array of shape (N, *dims)."""
     np.random.seed(seed)
     n = X.shape[0]
@@ -86,13 +86,17 @@ def resample_nb_X_multidim(X, R=int(1e5), seed=0, N=0):
     return data_resampled
 
 @njit
-def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
-    """X: array of shape (N, n_vars)."""
+def resample_nb_X(X, R=int(1e5), seed=0, smooth=False, N=0):
     if X.ndim > 2:
         assert not smooth, "Smooth not supported for multidimensional data."
-        data_resampled = resample_nb_X_multidim(X, R=R-1, seed=seed, N=N)
+        return _resample_nb_X_multidim(X, R=R-1, seed=seed, N=N)
     else:
-        data_resampled = resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
+        return _resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
+
+@njit
+def resample_nb(X, func, output_len=1, R=int(1e5), seed=0, smooth=False, N=0):
+    """X: array of shape (N, n_vars)."""
+    data_resampled = resample_nb_X(X, R=R-1, seed=seed, smooth=smooth, N=N)
 
     boot_sample = np.empty((R, output_len))
     boot_sample[0] = func(X) # first element is the sample statistic.
