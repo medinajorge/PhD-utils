@@ -12,6 +12,9 @@ from . import analysis
 from . import integration
 from .stats import bootstrap, conf_interval
 from .stats.rtopy import resample
-from .stats.test import permutation
+try:
+    from .stats.test import permutation
+except:
+    pass
 from .storage import delete_stdin_files, current_process_memory_usage
 from .script_fmt import getopt_printer, incompleted_programs_shell_script
