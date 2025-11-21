@@ -6,7 +6,10 @@ import numpy as np
 import re
 from functools import reduce
 from .stats.rtopy import resample
-from .stats.test import permutation
+try:
+    from .stats.test import permutation
+except:
+    pass
 
 def latex_table(DF, index=False, CI_table=False, **kwargs):
     """Pandas DataFrame -> Latex table."""
